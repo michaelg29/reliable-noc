@@ -41,9 +41,8 @@ class noc_adapter : public sc_module, public noc_if, public noc_adapter_if {
 
         /** Corresponding router. */
         sc_port<noc_if> router_if;
-        // router_if->write_link(NOC_DIR_TILE, data, link_ctrl)
 
-        noc_adapter(uint32_t x, uint32_t y);
+        noc_adapter(sc_module_name name, uint32_t x, uint32_t y);
 
         /** noc_if functions. */
         void read_port(noc_dir_e dir, noc_data_t& data, noc_link_ctrl_t& link_ctrl);

@@ -4,14 +4,27 @@
 #ifndef NOC_IF_H
 #define NOC_IF_H
 
+/** Macros. */
+
+// Address masks (32b = 4b + 4b + 24b)
+#define NOC_ADDR_REL_MASK 0x00ffffff
+#define NOC_ADDR_X_MASK   0x0f000000
+#define NOC_ADDR_Y_MASK   0xf0000000
+#define NOC_GET_REL_ADDR(addr) (addr & NOC_ADDR_REL_MASK)
+#define NOC_GET_X_ADDR(addr)   ((addr & NOC_ADDR_X_MASK) >> 24)
+#define NOC_GET_Y_ADDR(addr)   ((addr & NOC_ADDR_Y_MASK) >> 28)
+#define NOC_RECOVER_RAW_ADDR(addr_struct) ((addr_struct.rel & NOC_ADDR_REL_MASK) | ((addr_struct.x << 24) & NOC_ADDR_X_MASK) | ((addr_struct.y << 28) & NOC_ADDR_Y_MASK))
+
 /** Port direction. */
 enum noc_dir_e {
     NOC_DIR_X_PLUS,
     NOC_DIR_X_MINUS,
     NOC_DIR_Y_PLUS,
     NOC_DIR_Y_MINUS,
-    NOC_DIR_TILE
+    NOC_DIR_TILE,
+    NOC_DIR_NULL
 };
+#define NOC_N_DIR (uint32_t)(NOC_DIR_NULL)
 
 enum noc_routing_alg {
     NOC_ROUTE_X_Y,
@@ -45,6 +58,9 @@ class noc_if : virtual public sc_interface {
 
     public:
 
+        /** Constructor. */
+        noc_if(bool dummy = false);
+
         /**
          * Read the specific port.
          *
@@ -52,9 +68,25 @@ class noc_if : virtual public sc_interface {
          * @param data      The data on the port.
          * @param link_ctrl The link control data on the port.
          */
-        void read_port(noc_dir_e dir, noc_data_t& data, noc_link_ctrl_t& link_ctrl);
+        virtual void read_port(noc_dir_e dir, noc_data_t& data, noc_link_ctrl_t& link_ctrl) = 0;
 
-    protected:
+        /** Whether the interface is a dummy. */
+        bool is_dummy_if();
+
+    private:
+
+        bool _dummy;
+
+};
+
+class noc_dummy_if : public sc_module, public noc_if {
+
+    public:
+
+        /** Constructor. */
+        noc_dummy_if(sc_module_name name);
+        
+        void read_port(noc_dir_e dir, noc_data_t& data, noc_link_ctrl_t& link_ctrl);
 
 };
 

@@ -7,8 +7,7 @@
 #ifndef NOC_ROUTER_H
 #define NOC_ROUTER_H
 
-#define NOC_N_ROUTER_IF 5
-#define NOC_N_VC 3
+#define NOC_N_VC 4
 
 struct noc_if_t {
     sc_port<noc_if> port;
@@ -16,26 +15,84 @@ struct noc_if_t {
     noc_vc out_vc[NOC_N_VC];
 };
 
+class noc_router_ctrl {
+
+    public:
+
+        /**
+         * Constructor.
+         *
+         * @param x     The x-coordinate of the parent router.
+         * @param y     The y-coordinate of the parent router.
+         * @param dummy Whether the controller is for a dummy interface.
+         */
+        noc_router_ctrl(uint32_t x = 0, uint32_t y = 0, bool dummy = true);
+
+        /**
+         * Determine whether the input channel wants to write to the specified output direction.
+         */
+        bool read_input(noc_dir_e dir, noc_data_t& data, noc_link_ctrl_t& link_ctrl);
+
+        /**
+         * Read the packet queued to write.
+         *
+         * @param data      Data.
+         * @param link_ctrl Link control data.
+         */
+        void read_output(noc_data_t& data, noc_link_ctrl_t& link_ctrl);
+
+        /**
+         * Write a packet to the input VCs.
+         *
+         * @param data      Data.
+         * @param link_ctrl Link control data.
+         * @retval Whether an open VC was found.
+         */
+        bool write_input(noc_data_t data, noc_link_ctrl_t link_ctrl);
+        
+        /**
+         * Determine whether there is space in a virtual channel.
+         */
+        bool can_write_output();
+
+        /**
+         * Write a packet to the output VCs.
+         *
+         * @param data      Data.
+         * @param link_ctrl Link control data.
+         * @retval Whether an open VC was found.
+         */
+        bool write_output(noc_data_t data, noc_link_ctrl_t link_ctrl);
+
+    private:
+
+        /** Configuration. */
+        uint32_t _x;
+        uint32_t _y;
+
+        /** Virtual channels. */
+        uint32_t _in_vc_idx;
+        noc_vc _in_vc[NOC_N_VC];
+        uint32_t _out_vc_idx;
+        noc_vc _out_vc[NOC_N_VC];
+
+};
+
 /** NoC router module. */
 class noc_router : public sc_module, public noc_if {
 
     public:
 
-        /** Corresponding tile. */
-        noc_if_t tile_if;
-
-        /** Neighboring routers. */
-        noc_if_t xplus_router_if;
-        noc_if_t xminus_router_if;
-        noc_if_t yplus_router_if;
-        noc_if_t yminus_router_if;
-
-        // write to x- port of xplus router
-        // xplus_router_if->write_link(NOC_DIR_X_MINUS, data, link_ctrl)
+        /** Directional ports and controllers. */
+        sc_port<noc_if> ports[NOC_N_DIR];
+        noc_router_ctrl dir_ctrls[NOC_N_DIR];
 
         /** Constructor. */
         SC_HAS_PROCESS(noc_router);
         noc_router(sc_module_name name, uint32_t x, uint32_t y);
+
+        /** To be called after port assignment. */
+        void setup_ctrl();
 
         /** noc_if functions. */
         void read_port(noc_dir_e dir, noc_data_t& data, noc_link_ctrl_t& link_ctrl);

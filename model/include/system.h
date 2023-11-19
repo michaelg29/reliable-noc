@@ -1,5 +1,8 @@
 
+#include "systemc.h"
+
 #include <string>
+#include <stdarg.h>
 
 #ifndef SYSTEM_H
 #define SYSTEM_H
@@ -21,25 +24,23 @@
 #define CC_NS (1 / FREQ)
 
 // wait for next CC
-#define DELAY_CLIENT(cc) wait(cc, SC_NS)
-// wait for next CC, then give NoC priority with another wait statement
-#define DELAY(cc) wait(cc, SC_NS); wait(0, SC_NS)
+#define POSEDGE_NoC() wait(1, SC_NS)
+#define YIELD() wait(0, SC_NS)
+// wait for next CC, then yield priority with another wait statement
+#define POSEDGE() wait(1, SC_NS); wait(0, SC_NS)
 
 // ================================
 // ===== CONFIGURATION MACROS =====
 // ================================
 
 // NoC parameters
-#define N_VC 5
+#define NOC_X_SIZE 2
+#define NOC_Y_SIZE 1
+#define NOC_N_TILES (NOC_X_SIZE * NOC_Y_SIZE)
 
-// NoC size: 16x16
-// Address masks (32b = 4b + 4b + 24b)
-#define NOC_ADDR_REL_MASK 0x00ffffff
-#define NOC_ADDR_X_MASK   0x0f000000
-#define NOC_ADDR_Y_MASK   0xf0000000
-#define NOC_GET_REL_ADDR(addr) (addr & (NOC_ADDR_REL_MASK))
-#define NOC_GET_X_ADDR(addr)   (addr & (NOC_ADDR_X_MASK)) >> 24
-#define NOC_GET_Y_ADDR(addr)   (addr & (NOC_ADDR_Y_MASK)) >> 28
+// Base addresses
+#define BASE_ADDR_NOC_COMMANDER 0x00000000
+#define BASE_ADDR_NOC_RESPONDER 0x01000000
 
 bool parseCmdLine(int argc, char **argv);
 

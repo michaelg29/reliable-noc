@@ -5,15 +5,15 @@
 #include "noc_if.h"
 #include "noc_adapter.h"
 
-noc_adapter::noc_adapter(uint32_t x, uint32_t y)
-    : _x(x), _y(y)
+noc_adapter::noc_adapter(sc_module_name name, uint32_t x, uint32_t y)
+    : sc_module(name), _x(x), _y(y)
 {
 
 }
 
 /** noc_if.read_port */
 void noc_adapter::read_port(noc_dir_e dir, noc_data_t& data, noc_link_ctrl_t& link_ctrl) {
-    noc_if::read_port(dir, data, link_ctrl);
+    link_ctrl.ctrl = false;
 
     if (dir == NOC_DIR_TILE) {
         data = _w_data;
@@ -24,6 +24,7 @@ void noc_adapter::read_port(noc_dir_e dir, noc_data_t& data, noc_link_ctrl_t& li
 /** noc_adapter_if.read_packet */
 bool noc_adapter::read_packet(uint32_t& rel_addr, noc_data_t& data, bool& has_more) {
     // read from the router
+    POSEDGE();
     router_if->read_port(NOC_DIR_TILE, _r_data, _r_link_ctrl);
 
     // if packet is enabled
@@ -64,8 +65,7 @@ bool noc_adapter::write_packet(uint32_t src, uint32_t addr, noc_data_t *data, ui
         data++;
 
         // wait for next CC
-        DELAY_CLIENT(1);
-        _w_link_ctrl.head = false;
+        POSEDGE();
     }
 
     // disable packet

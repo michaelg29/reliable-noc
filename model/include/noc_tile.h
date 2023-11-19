@@ -21,18 +21,35 @@ class noc_tile : public sc_module {
 
 /** Command issuer. */
 class noc_commander : public noc_tile {
-    
+
     public:
-    
+
         /** Constructor. */
         SC_HAS_PROCESS(noc_commander);
         noc_commander(sc_module_name name);
-        
+
     private:
-    
+
         /** Main thread function. */
         void main();
-    
+
+};
+
+/** Command responder. */
+class noc_responder : public noc_tile {
+
+    public:
+
+        /** Constructor. */
+        SC_HAS_PROCESS(noc_responder);
+        noc_responder(sc_module_name name);
+
+    private:
+
+        /** Main thread functions. */
+        void recv_main();
+        void write_main();
+
 };
 
 #endif // NOC_TILE_H

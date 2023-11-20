@@ -3,6 +3,7 @@
 ##### Variables #####
 #####################
 EXE          ?= system
+COMP_MODE    ?= BASE
 
 #########################
 ##### Configuration #####
@@ -40,7 +41,7 @@ IFLAGS ?= -I../include -isystem $(SYSTEMC_INC_DIR)
 LFLAGS ?= -lsystemc -lm -L$(SYSTEMC_LIB_DIR)
 
 # file lists
-DEPS   = $(wildcard *.h) $(wildcard ../include/*.h)
+DEPS   = $(wildcard *.h) $(wildcard ../include/*.h) $(wildcard *.hpp) $(wildcard ../include/*.hpp)
 SRCS   = $(wildcard *.cpp) $(wildcard ../src/*.cpp)
 
 ifneq (,$(EXTRA_SRC_FILES))
@@ -48,6 +49,11 @@ ifneq (,$(EXTRA_SRC_FILES))
 endif
 
 OBJS   = $(SRCS:.cpp=.o)
+
+DEFINE_FLAGS =
+ifneq (,$(COMP_MODE))
+  DEFINE_FLAGS = -D NOC_MODE=$(COMP_MODE)
+endif
 
 ##########################################
 ##### Process command line arguments #####
@@ -58,7 +64,7 @@ OBJS   = $(SRCS:.cpp=.o)
 ###################
 
 %.o: %.cpp $(DEPS)
-	$(CXX) -c -o $@ $< $(CFLAGS) $(IFLAGS)
+	$(CXX) -c -o $@ $< $(CFLAGS) $(IFLAGS) $(DEFINE_FLAGS)
 
 $(EXE): $(OBJS)
 	$(CXX) -o $@ $^ $(CFLAGS) $(LFLAGS)

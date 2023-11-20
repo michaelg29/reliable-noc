@@ -42,6 +42,10 @@
 #define BASE_ADDR_NOC_COMMANDER 0x00000000
 #define BASE_ADDR_NOC_RESPONDER 0x01000000
 
+// ============================
+// ===== HELPER FUNCTIONS =====
+// ============================
+
 bool parseCmdLine(int argc, char **argv);
 
 #endif // SYSTEM_H

@@ -4,6 +4,7 @@
 #####################
 EXE          ?= system
 COMP_MODE    ?= BASE
+LOG_FILE     ?= log
 
 #########################
 ##### Configuration #####
@@ -70,7 +71,7 @@ $(EXE): $(OBJS)
 	$(CXX) -o $@ $^ $(CFLAGS) $(LFLAGS)
 
 run: $(EXE)
-	./$(EXE)
+	./$(EXE) $(LOG_FILE)
 
 .PHONY: clean
 

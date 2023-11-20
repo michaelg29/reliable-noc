@@ -1,10 +1,12 @@
 
 #include "noc_vc.h"
 
-noc_vc::noc_vc(bool is_dummy)
-    : _head(0), _tail(0), _fifo_buf(nullptr) {
+noc_vc::noc_vc(std::string name, bool is_dummy)
+    : _head(0), _tail(0), _fifo_buf(nullptr), stats_wrapper("noc_vc", name) {
     if (!is_dummy) {
         _fifo_buf = new noc_vc_fifo_t[NOC_VC_BUF_SIZE];
+
+        //stats_wrapper::register_inst<noc_vc>(this);
     }
 }
 
@@ -47,4 +49,12 @@ bool noc_vc::peek(noc_data_t& data, noc_link_ctrl_t& link_ctrl, noc_dir_e& pkt_d
     pkt_dir = _fifo_buf[_head & NOC_VC_PTR_MASK].pkt_dir;
 
     return true;
+}
+
+void noc_vc::reset_stats() {
+    std::cout << "noc_vc::reset_stats" << std::endl;
+}
+
+void noc_vc::print_module_report(std::ostream& ostream) {
+    ostream << "\"reads\": 5" << std::endl;
 }

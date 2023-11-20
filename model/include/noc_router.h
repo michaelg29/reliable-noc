@@ -1,6 +1,8 @@
 
 #include "systemc.h"
 
+#include "system.h"
+#include "stats_wrapper.h"
 #include "noc_if.h"
 #include "noc_vc.h"
 
@@ -9,13 +11,7 @@
 
 #define NOC_N_VC 4
 
-struct noc_if_t {
-    sc_port<noc_if> port;
-    noc_vc in_vc[NOC_N_VC];
-    noc_vc out_vc[NOC_N_VC];
-};
-
-class noc_router_ctrl {
+class noc_router_ctrl : public stats_wrapper {
 
     public:
 
@@ -26,7 +22,7 @@ class noc_router_ctrl {
          * @param y     The y-coordinate of the parent router.
          * @param dummy Whether the controller is for a dummy interface.
          */
-        noc_router_ctrl(uint32_t x = 0, uint32_t y = 0, bool dummy = true);
+        noc_router_ctrl(uint32_t dir = 0, uint32_t x = 0, uint32_t y = 0, bool dummy = true);
 
         /**
          * Determine whether the input channel wants to write to the specified output direction.
@@ -63,6 +59,10 @@ class noc_router_ctrl {
          * @retval Whether an open VC was found.
          */
         bool write_output(noc_data_t data, noc_link_ctrl_t link_ctrl);
+        
+        /** stats_wrapper functions */
+        void reset_stats();
+        void print_report(std::ostream& ostream);
 
     private:
 
@@ -75,11 +75,14 @@ class noc_router_ctrl {
         noc_vc _in_vc[NOC_N_VC];
         uint32_t _out_vc_idx;
         noc_vc _out_vc[NOC_N_VC];
+        
+        /** Print report. */
+        void print_module_report(std::ostream& ostream);
 
 };
 
 /** NoC router module. */
-class noc_router : public sc_module, public noc_if {
+class noc_router : public sc_module, public noc_if, public stats_wrapper {
 
     public:
 
@@ -97,6 +100,10 @@ class noc_router : public sc_module, public noc_if {
         /** noc_if functions. */
         void read_port(noc_dir_e dir, noc_data_t& data, noc_link_ctrl_t& link_ctrl);
 
+        /** stats_wrapper functions */
+        void reset_stats();
+        void print_report(std::ostream& ostream);
+        
     private:
 
         /** Configuration. */
@@ -105,6 +112,9 @@ class noc_router : public sc_module, public noc_if {
 
         /** Main thread function. */
         void main();
+        
+        /** Print report. */
+        void print_module_report(std::ostream& ostream);
 
 };
 

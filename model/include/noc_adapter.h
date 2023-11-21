@@ -12,25 +12,26 @@ class noc_adapter_if : virtual public sc_interface {
     public:
 
         /**
+         * Wait for data reception.
+         *
+         * @param src_addr The source address of the packet.
+         * @param rel_addr The relative address of the packet destination.
+         * @param data     The packet data.
+         * @retval Whether the packet was valid.
+         */
+        virtual bool read_packet(uint32_t& src_addr, uint32_t& rel_addr, noc_data_t& data) = 0;
+
+        /**
          * Write a data packet to the network.
          *
          * @param src  The source address relative to the current tile.
          * @param addr The base address to write to.
          * @param data The array of data to write.
-         * @param n    The number of data packets to write.
+         * @param n    The size of the payload in bytes.
+         * @param op   The operation of the request.
          * @retval Whether the transmission was successful.
          */
         virtual bool write_packet(uint32_t src, uint32_t addr, noc_data_t *data, uint32_t n) = 0;
-
-        /**
-         * Wait for data reception.
-         *
-         * @param rel_addr The relative address of the packet destination.
-         * @param data     The packet data.
-         * @param has_more Whether there is more data in the transmission.
-         * @retval Whether the packet was valid.
-         */
-        virtual bool read_packet(uint32_t& rel_addr, noc_data_t& data, bool& has_more) = 0;
 
 };
 
@@ -48,7 +49,7 @@ class noc_adapter : public sc_module, public noc_if, public noc_adapter_if {
         void read_port(noc_dir_e dir, noc_data_t& data, noc_link_ctrl_t& link_ctrl);
 
         /** noc_adapter_if functions. */
-        bool read_packet(uint32_t& addr, noc_data_t& data, bool& has_more);
+        bool read_packet(uint32_t& src_addr, uint32_t& addr, noc_data_t& data);
         bool write_packet(uint32_t src, uint32_t addr, noc_data_t *data, uint32_t n);
 
     private:

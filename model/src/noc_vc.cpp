@@ -5,8 +5,6 @@ noc_vc::noc_vc(std::string name, bool is_dummy)
     : _head(0), _tail(0), _fifo_buf(nullptr), stats_wrapper("noc_vc", name) {
     if (!is_dummy) {
         _fifo_buf = new noc_vc_fifo_t[NOC_VC_BUF_SIZE];
-
-        //stats_wrapper::register_inst<noc_vc>(this);
     }
 }
 

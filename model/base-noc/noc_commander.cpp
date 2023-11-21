@@ -1,4 +1,6 @@
 
+#include <string>
+
 #include "systemc.h"
 
 #include "system.h"
@@ -12,15 +14,14 @@ void noc_commander::main() {
     LOG("Hello, world!");
     
     const char *msg = "Hello, world";
-    noc_data_t *data_arr = (noc_data_t*)msg;
     
     POSEDGE();
     
-    if (adapter_if->write_packet(0, BASE_ADDR_NOC_RESPONDER, data_arr, 3)) {
-        std::cout << "Wrote packet" << std::endl;
+    if (adapter_if->write_packet(0, BASE_ADDR_NOC_RESPONDER, (noc_data_t *)msg, strlen(msg))) {
+        std::cout << "Wrote string to responder" << std::endl;
     }
     else {
-        std::cout << "Could not write packet" << std::endl;
+        std::cout << "Could not write string to responder" << std::endl;
     }
     
     POSEDGE();
@@ -28,4 +29,8 @@ void noc_commander::main() {
     POSEDGE();
     
     sc_stop();
+}
+
+void noc_commander::dma_main() {
+    
 }

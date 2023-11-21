@@ -22,7 +22,7 @@ void noc_adapter::read_port(noc_dir_e dir, noc_data_t& data, noc_link_ctrl_t& li
 }
 
 /** noc_adapter_if.read_packet */
-bool noc_adapter::read_packet(uint32_t& rel_addr, noc_data_t& data, bool& has_more) {
+bool noc_adapter::read_packet(uint32_t& src_addr, uint32_t& rel_addr, noc_data_t& data) {
     // read from the router
     POSEDGE();
     router_if->read_port(NOC_DIR_TILE, _r_data, _r_link_ctrl);
@@ -30,11 +30,9 @@ bool noc_adapter::read_packet(uint32_t& rel_addr, noc_data_t& data, bool& has_mo
     // if packet is enabled
     if (_r_link_ctrl.ctrl) {
         // parse packet
+        src_addr = NOC_RECOVER_RAW_ADDR(_r_link_ctrl.src);
         rel_addr = _r_link_ctrl.dst.rel;
         data = _r_data;
-
-        // true if not the tail packet
-        has_more = !_r_link_ctrl.tail;
 
         return true;
     }
@@ -47,6 +45,9 @@ bool noc_adapter::write_packet(uint32_t src, uint32_t addr, noc_data_t *data, ui
     // activate packet
     _w_link_ctrl.ctrl = true;
     _w_link_ctrl.head = true;
+
+    // determine number of packets
+    n = (n / NOC_DSIZE) + ((n % NOC_DSIZE) ? 1 : 0);
 
     while (n) {
         // construct current packet
@@ -61,11 +62,12 @@ bool noc_adapter::write_packet(uint32_t src, uint32_t addr, noc_data_t *data, ui
 
         // increment counters
         n--;
-        addr++;
+        addr += NOC_DSIZE;
         data++;
 
         // wait for next CC
         POSEDGE();
+        _w_link_ctrl.head = false;
     }
 
     // disable packet

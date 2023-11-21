@@ -13,7 +13,6 @@ noc_router_ctrl::noc_router_ctrl(uint32_t dir, uint32_t x, uint32_t y, bool dumm
         // initialize virtual channels
         std::string in_vc_name = "router_" + std::to_string(x) + "_" + std::to_string(y) + "_" + std::to_string(dir) + "_in_vc_";
         std::string out_vc_name = "router_" + std::to_string(x) + "_" + std::to_string(y) + "_" + std::to_string(dir) + "_out_vc_";
-        std::cout << in_vc_name << " " << out_vc_name << std::endl;
         for (int i = 0; i < NOC_N_VC; ++i) {
             _in_vc[i] = noc_vc(in_vc_name + std::to_string(i), dummy);
             _out_vc[i] = noc_vc(out_vc_name + std::to_string(i), dummy);
@@ -178,7 +177,7 @@ void noc_router::main() {
         for (i = 0; i < NOC_N_DIR; ++i) {
             ports[i]->read_port(if_port_dirs[i], data, link_ctrl);
             if (link_ctrl.ctrl) {
-                LOGF("Packet at rtr %d %d on port %d: %08x @ %08x", _x, _y, i, data, NOC_RECOVER_RAW_ADDR(link_ctrl.dst));
+                LOGF("Packet at rtr %d %d on port %d: %08lx @ %08x", _x, _y, i, data, NOC_RECOVER_RAW_ADDR(link_ctrl.dst));
                 if (!dir_ctrls[i].write_input(data, link_ctrl)) {
                     // send backpressure
                 }

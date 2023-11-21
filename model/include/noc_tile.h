@@ -1,6 +1,7 @@
 
 #include "systemc.h"
 
+#include "system.h"
 #include "noc_adapter.h"
 
 #ifndef NOC_TILE_H
@@ -32,6 +33,7 @@ class noc_commander : public noc_tile {
 
         /** Main thread function. */
         void main();
+        void dma_main();
 
 };
 
@@ -45,10 +47,16 @@ class noc_responder : public noc_tile {
         noc_responder(sc_module_name name);
 
     private:
+    
+        /** Current state. */
+        noc_cmd_t _cur_cmd;
+        noc_cmd_t _cur_ack;
+        noc_responder_state_e _state;
+        
 
         /** Main thread functions. */
-        void recv_main();
-        void write_main();
+        void recv_listener();
+        void main();
 
 };
 

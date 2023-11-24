@@ -1,8 +1,6 @@
 
 #include "system.h"
-
 #include "noc_if.h"
-#include "stats_wrapper.h"
 
 #ifndef NOC_VC_H
 #define NOC_VC_H
@@ -21,7 +19,7 @@ struct noc_vc_fifo_t {
 /**
  * Virtual channel FIFO buffer in a NoC router.
  */
-class noc_vc : public stats_wrapper {
+class noc_vc {
 
     public:
 
@@ -60,9 +58,6 @@ class noc_vc : public stats_wrapper {
          * @retval Whether an item was read. Returns false if the FIFO is empty.
          */
         bool peek(noc_data_t& data, noc_link_ctrl_t& link_ctrl, noc_dir_e& pkt_dir);
-        
-        /** stats_wrapper functions */
-        void reset_stats();
 
     private:
 
@@ -72,9 +67,11 @@ class noc_vc : public stats_wrapper {
         /** FIFO pointers. */
         int32_t _head;
         int32_t _tail;
+        std::string _name;
         
-        /** Print report. */
-        void print_module_report(std::ostream& ostream);
+        /** Statistics. */
+        uint32_t _enqueues;
+        uint32_t _dequeues;
 
 };
 

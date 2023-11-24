@@ -2,9 +2,10 @@
 #####################
 ##### Variables #####
 #####################
-EXE          ?= system
-COMP_MODE    ?= BASE
-LOG_FILE     ?= log
+EXE           ?= system
+COMP_MODE     ?= BASE
+DISABLE_TRACE ?=
+TRACE_FILE    ?= log
 
 #########################
 ##### Configuration #####
@@ -60,6 +61,10 @@ endif
 ##### Process command line arguments #####
 ##########################################
 
+ifneq (,$(DISABLE_TRACE))
+  TRACE_FILE =
+endif
+
 ###################
 ##### Targets #####
 ###################
@@ -71,9 +76,9 @@ $(EXE): $(OBJS)
 	$(CXX) -o $@ $^ $(CFLAGS) $(LFLAGS)
 
 run: $(EXE)
-	./$(EXE) $(LOG_FILE)
+	./$(EXE) $(TRACE_FILE)
 
 .PHONY: clean
 
 clean:
-	rm -f $(OBJS) $(EXE)
+	rm -f $(wildcard *.o) $(wildcard ../src/*.o) $(EXE)

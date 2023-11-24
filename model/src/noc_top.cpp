@@ -9,8 +9,7 @@
 // dummy interface
 noc_dummy_if dummy_if("dummy_if");
 
-noc_top::noc_top()
-    : stats_wrapper("noc_top", "noc_top") {}
+noc_top::noc_top() {}
 
 void noc_top::generate_network() {
     // ==========================
@@ -59,36 +58,4 @@ void noc_top::generate_network() {
             _routers[y][x]->setup_ctrl();
         }
     }
-}
-
-void noc_top::reset_stats() {
-    // call children
-    for (int y = 0; y < NOC_Y_SIZE; ++y) {
-        for (int x = 0; x < NOC_X_SIZE; ++x) {
-            if (_tiles[y][x]) {
-                //_tiles[y][x]->reset_stats();
-                //_adapters[y][x]->reset_stats();
-                _routers[y][x]->reset_stats();
-            }
-        }
-    }
-}
-
-void noc_top::print_report(std::ostream& ostream) {
-    stats_wrapper::print_report(ostream);
-
-    // call children
-    for (int y = 0; y < NOC_Y_SIZE; ++y) {
-        for (int x = 0; x < NOC_X_SIZE; ++x) {
-            if (_tiles[y][x]) {
-                //_tiles[y][x]->print_report(ostream);
-                //_adapters[y][x]->print_report(ostream);
-                _routers[y][x]->print_report(ostream);
-            }
-        }
-    }
-}
-
-void noc_top::print_module_report(std::ostream& ostream) {
-
 }

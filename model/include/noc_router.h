@@ -2,7 +2,6 @@
 #include "systemc.h"
 
 #include "system.h"
-#include "stats_wrapper.h"
 #include "noc_if.h"
 #include "noc_vc.h"
 
@@ -11,7 +10,7 @@
 
 #define NOC_N_VC 4
 
-class noc_router_ctrl : public stats_wrapper {
+class noc_router_ctrl {
 
     public:
 
@@ -45,7 +44,7 @@ class noc_router_ctrl : public stats_wrapper {
          * @retval Whether an open VC was found.
          */
         bool write_input(noc_data_t data, noc_link_ctrl_t link_ctrl);
-        
+
         /**
          * Determine whether there is space in a virtual channel.
          */
@@ -59,10 +58,6 @@ class noc_router_ctrl : public stats_wrapper {
          * @retval Whether an open VC was found.
          */
         bool write_output(noc_data_t data, noc_link_ctrl_t link_ctrl);
-        
-        /** stats_wrapper functions */
-        void reset_stats();
-        void print_report(std::ostream& ostream);
 
     private:
 
@@ -75,14 +70,11 @@ class noc_router_ctrl : public stats_wrapper {
         noc_vc _in_vc[NOC_N_VC];
         uint32_t _out_vc_idx;
         noc_vc _out_vc[NOC_N_VC];
-        
-        /** Print report. */
-        void print_module_report(std::ostream& ostream);
 
 };
 
 /** NoC router module. */
-class noc_router : public sc_module, public noc_if, public stats_wrapper {
+class noc_router : public sc_module, public noc_if {
 
     public:
 
@@ -100,10 +92,6 @@ class noc_router : public sc_module, public noc_if, public stats_wrapper {
         /** noc_if functions. */
         void read_port(noc_dir_e dir, noc_data_t& data, noc_link_ctrl_t& link_ctrl);
 
-        /** stats_wrapper functions */
-        void reset_stats();
-        void print_report(std::ostream& ostream);
-        
     private:
 
         /** Configuration. */
@@ -112,9 +100,6 @@ class noc_router : public sc_module, public noc_if, public stats_wrapper {
 
         /** Main thread function. */
         void main();
-        
-        /** Print report. */
-        void print_module_report(std::ostream& ostream);
 
 };
 

@@ -1,10 +1,15 @@
 
 #include "noc_vc.h"
+#include "sc_trace.hpp"
 
 noc_vc::noc_vc(std::string name, bool is_dummy)
-    : _head(0), _tail(0), _fifo_buf(nullptr), stats_wrapper("noc_vc", name) {
+    : _name(name), _head(0), _tail(0), _fifo_buf(nullptr), _enqueues(0), _dequeues(0) {
     if (!is_dummy) {
         _fifo_buf = new noc_vc_fifo_t[NOC_VC_BUF_SIZE];
+        
+        // initialize statistics
+        sc_tracer::trace(_enqueues, name, "enqueues");
+        sc_tracer::trace(_dequeues, name, "dequeues");
     }
 }
 
@@ -23,6 +28,8 @@ bool noc_vc::enqueue(noc_data_t data, noc_link_ctrl_t link_ctrl, noc_dir_e pkt_d
 
     // increment pointer
     _tail++;
+    _enqueues++;
+    std::cout << _name << " enqueues " << _enqueues << std::endl;
 
     return true;
 }
@@ -31,6 +38,7 @@ bool noc_vc::dequeue(noc_data_t& data, noc_link_ctrl_t& link_ctrl, noc_dir_e& pk
     if (peek(data, link_ctrl, pkt_dir)) {
         // increment pointer
         _head++;
+        _dequeues++;
         return true;
     }
 
@@ -47,12 +55,4 @@ bool noc_vc::peek(noc_data_t& data, noc_link_ctrl_t& link_ctrl, noc_dir_e& pkt_d
     pkt_dir = _fifo_buf[_head & NOC_VC_PTR_MASK].pkt_dir;
 
     return true;
-}
-
-void noc_vc::reset_stats() {
-    std::cout << "noc_vc::reset_stats" << std::endl;
-}
-
-void noc_vc::print_module_report(std::ostream& ostream) {
-    ostream << "\"reads\": 5" << std::endl;
 }

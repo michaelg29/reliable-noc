@@ -4,18 +4,18 @@
 #include "system.h"
 #include "noc_if.h"
 #include "noc_router.h"
+#include "sc_trace.hpp"
 
 noc_router_ctrl::noc_router_ctrl(uint32_t dir, uint32_t x, uint32_t y, bool dummy)
-    : _x(x), _y(y), _in_vc_idx(0), _out_vc_idx(0),
-      stats_wrapper("noc_router_ctrl", dummy ? "" : "router_ctrl_" + std::to_string(x) + "_" + std::to_string(y) + "_" + std::to_string(dir))
+    : _x(x), _y(y), _in_vc_idx(0), _out_vc_idx(0)
 {
     if (!dummy) {
         // initialize virtual channels
-        std::string in_vc_name = "router_" + std::to_string(x) + "_" + std::to_string(y) + "_" + std::to_string(dir) + "_in_vc_";
-        std::string out_vc_name = "router_" + std::to_string(x) + "_" + std::to_string(y) + "_" + std::to_string(dir) + "_out_vc_";
+        std::string in_vc_name = "router_" + std::to_string(x) + "_" + std::to_string(y) + ".dir_" + std::to_string(dir) + ".in_vc_";
+        std::string out_vc_name = "router_" + std::to_string(x) + "_" + std::to_string(y) + ".dir_" + std::to_string(dir) + ".out_vc_";
         for (int i = 0; i < NOC_N_VC; ++i) {
             _in_vc[i] = noc_vc(in_vc_name + std::to_string(i), dummy);
-            _out_vc[i] = noc_vc(out_vc_name + std::to_string(i), dummy);
+            _out_vc[i] =noc_vc(out_vc_name + std::to_string(i), dummy);
         }
     }
 }
@@ -117,32 +117,15 @@ bool noc_router_ctrl::write_output(noc_data_t data, noc_link_ctrl_t link_ctrl) {
     return false;
 }
 
-void noc_router_ctrl::reset_stats() {
-
-}
-
-void noc_router_ctrl::print_report(std::ostream& ostream) {
-    stats_wrapper::print_report(ostream);
-
-    // call children
-    for (int i = 0; i < NOC_N_VC; ++i) {
-        _in_vc[i].print_report(ostream);
-        _out_vc[i].print_report(ostream);
-    }
-}
-
-void noc_router_ctrl::print_module_report(std::ostream& ostream) {
-
-}
-
 noc_router::noc_router(sc_module_name name, uint32_t x, uint32_t y)
-    : sc_module(name), _x(x), _y(y), stats_wrapper("noc_router", name)
+    : sc_module(name), _x(x), _y(y)
 {
     SC_THREAD(main);
 }
 
 void noc_router::setup_ctrl() {
     for (int i = 0; i < NOC_N_DIR; ++i) {
+        
         dir_ctrls[i] = noc_router_ctrl(i, _x, _y, ports[i]->is_dummy_if());
     }
 }
@@ -207,24 +190,4 @@ void noc_router::main() {
 
         POSEDGE_NoC();
     }
-}
-
-void noc_router::reset_stats() {
-    // call children
-    for (int i = 0; i < NOC_N_DIR; ++i) {
-        dir_ctrls[i].reset_stats();
-    }
-}
-
-void noc_router::print_report(std::ostream& ostream) {
-    stats_wrapper::print_report(ostream);
-
-    // call children
-    for (int i = 0; i < NOC_N_DIR; ++i) {
-        dir_ctrls[i].print_report(ostream);
-    }
-}
-
-void noc_router::print_module_report(std::ostream& ostream) {
-
 }

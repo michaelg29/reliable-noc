@@ -13,7 +13,6 @@ char *key_file_name = (char*)"../key.bin";
 char *iv_file_name = (char*)"../iv.bin";
 char *in_file_name = (char*)"../in.bin";
 char *expected_out_file_name = (char*)"../out.bin";
-uint32_t input_size = 0;
 
 bool parse_cmd_line(int argc, char **argv) {
     // check usage
@@ -71,7 +70,7 @@ uint32_t read_input_files(uint8_t *out) {
     if (fp) {
         // get file size
         fseek(fp, 0L, SEEK_END);
-        input_size = ftell(fp);
+        uint32_t input_size = ftell(fp);
         fseek(fp, 0L, SEEK_SET);
         
         if (input_size > MAX_DATA_SIZE) {
@@ -94,7 +93,16 @@ uint32_t read_expected_output_file(uint8_t *out) {
     // read output file
     FILE *fp = fopen(expected_out_file_name, "rb");
     if (fp) {
-        n += fread(out + n, 1, input_size, fp);
+        // get file size
+        fseek(fp, 0L, SEEK_END);
+        uint32_t output_size = ftell(fp);
+        fseek(fp, 0L, SEEK_SET);
+        
+        if (output_size > MAX_OUT_SIZE) {
+            output_size = MAX_OUT_SIZE;
+        }
+        
+        n += fread(out + n, 1, output_size, fp);
         fclose(fp);
     }
     else {

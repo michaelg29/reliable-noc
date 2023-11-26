@@ -46,7 +46,7 @@ void noc_responder::recv_listener() {
     _state = NOC_RESPONDER_IDLE;
     while (true) {
         // receive packet while not busy
-        if (!_last_packet_loaded && adapter_if->read_packet(src_addr, in_addr, *data)) {
+        if (adapter_if->read_packet(src_addr, in_addr, *data) && !_last_packet_loaded) {
             LOGF("Received request containing %016lx at %08x", *data, in_addr);
 
             switch (_state) {

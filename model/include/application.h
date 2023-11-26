@@ -115,6 +115,14 @@ class application : virtual public sc_interface, public sc_module {
 
         /** Main thread functions. */
         void main();
+        
+        /** AES functions and buffers. */
+        aes_block_t _state;
+        aes_block_t _tmp;
+        void aes_encrypt_block(aes_block_t* in_text, int n,
+                       uint8_t subkeys[AES_256_NR + 1][AES_BLOCK_SIDE][AES_BLOCK_SIDE],
+                       aes_block_t* iv,
+                       aes_block_t* out);
 
 };
 
@@ -126,11 +134,6 @@ void aes_addRoundKey(uint8_t state[AES_BLOCK_SIDE][AES_BLOCK_SIDE], uint8_t subk
 void aes_byteSub(uint8_t state[AES_BLOCK_SIDE][AES_BLOCK_SIDE]);
 void aes_shiftRows(uint8_t state[AES_BLOCK_SIDE][AES_BLOCK_SIDE]);
 void aes_mixCols(uint8_t state[AES_BLOCK_SIDE][AES_BLOCK_SIDE], uint8_t tmp[AES_BLOCK_SIDE][AES_BLOCK_SIDE]);
-
-void aes_encrypt_block(aes_block_t in_text, int n,
-                       uint8_t subkeys[AES_256_NR + 1][AES_BLOCK_SIDE][AES_BLOCK_SIDE],
-                       aes_block_t iv,
-                       aes_block_t out);
 
 // ==========================
 // ===== KEY SCHEDULING =====

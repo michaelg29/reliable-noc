@@ -127,8 +127,8 @@ void aes_shiftRows(uint8_t state[AES_BLOCK_SIDE][AES_BLOCK_SIDE])
     for (int r = 8; r < (AES_BLOCK_SIDE << 3); r += 8)
     {
         // treat each row as a uint32
-        row = *(uint32_t*)state[r];
-        *(uint32_t*)state[r] = (row << r) | (row >> (32 - r));
+        row = *(uint32_t*)state[r >> 3];
+        *(uint32_t*)state[r >> 3] = (row >> r) | (row << (32 - r));
     }
 }
 
@@ -153,44 +153,52 @@ void aes_mixCols(uint8_t state[AES_BLOCK_SIDE][AES_BLOCK_SIDE], uint8_t tmp[AES_
     memcpy(state, tmp, AES_BLOCK_SIDE * AES_BLOCK_SIDE * sizeof(uint8_t));
 }
 
-void aes_encrypt_block(aes_block_t in_text, int n,
+void application::aes_encrypt_block(aes_block_t* in_text, int n,
                        uint8_t subkeys[AES_256_NR + 1][AES_BLOCK_SIDE][AES_BLOCK_SIDE],
-                       aes_block_t iv,
-                       aes_block_t out)
+                       aes_block_t* iv,
+                       aes_block_t* out)
 {
+    printf("\nIV:              ");
+    for (int j = 0; j < AES_BLOCK_LEN; ++j) {
+        printf("%02x ", iv->string[j]);
+    }
+    printf("\nInput:           ");
+    for (int j = 0; j < n; ++j) {
+        printf("%02x ", in_text->string[j]);
+    }
+    
     // represent the state and key as a 4x4 table (read into columns)
-    uint8_t state[AES_BLOCK_SIDE][AES_BLOCK_SIDE];
     int i = 0;
     for (int c = 0; c < AES_BLOCK_SIDE; c++)
     {
         for (int r = 0; r < AES_BLOCK_SIDE; r++)
         {
             // use PKCS5 padding
-            state[r][c] = (i < n) ? in_text.string[i] : AES_BLOCK_LEN - n;
+            _state.square[r][c] = (i < n) ? in_text->string[i] : AES_BLOCK_LEN - n;
 
             // XOR with the IV
-            state[r][c] ^= iv.string[i];
+            _state.square[r][c] ^= iv->string[i];
 
             i++;
         }
     }
 
     // ROUND 0
-    aes_addRoundKey(state, subkeys[0]);
+    aes_addRoundKey(_state.square, subkeys[0]);
 
     // ROUNDS 1 --> NR-1
     for (i = 1; i < AES_256_NR; i++)
     {
-        aes_byteSub(state);
-        aes_shiftRows(state);
-        aes_mixCols(state, in_text.square);
-        aes_addRoundKey(state, subkeys[i]);
+        aes_byteSub(_state.square);
+        aes_shiftRows(_state.square);
+        aes_mixCols(_state.square, _tmp.square);
+        aes_addRoundKey(_state.square, subkeys[i]);
     }
 
     // ROUND NR
-    aes_byteSub(state);
-    aes_shiftRows(state);
-    aes_addRoundKey(state, subkeys[AES_256_NR]);
+    aes_byteSub(_state.square);
+    aes_shiftRows(_state.square);
+    aes_addRoundKey(_state.square, subkeys[AES_256_NR]);
 
     // copy bytes of state into the output column by column
     i = 0;
@@ -198,9 +206,15 @@ void aes_encrypt_block(aes_block_t in_text, int n,
     {
         for (int r = 0; r < AES_BLOCK_SIDE; r++)
         {
-            out.string[i++] = state[r][c];
+            out->string[i++] = _state.square[r][c];
         }
     }
+    
+    printf("\nOutput:          ");
+    for (int j = 0; j < AES_BLOCK_LEN; ++j) {
+        printf("%02x ", out->string[j]);
+    }
+    printf("\n");
 }
 
 // ==========================
@@ -208,6 +222,12 @@ void aes_encrypt_block(aes_block_t in_text, int n,
 // ==========================
 
 void aes_generateKeySchedule256(uint8_t in_key[AES_256_KEY_LEN], uint8_t subkeys[AES_256_NR + 1][AES_BLOCK_SIDE][AES_BLOCK_SIDE]) {
+    printf("Key:              ");
+    for (int j = 0; j < AES_256_KEY_LEN; ++j) {
+        printf("%02x ", in_key[j]);
+    }
+    printf("\n");
+    
     // write original key
     int i;
     for (i = 0; i < 8; i++) {
@@ -272,6 +292,8 @@ application::application(sc_module_name name) : sc_module(name) {
     _is_busy = false;
     _out_fifo_head = 0;
     _out_fifo_tail = 0;
+    
+    SC_THREAD(main);
 }
 
 void application::configure(uint32_t payload_size, uint32_t out_addr) {
@@ -303,14 +325,26 @@ void application::write_packet(uint32_t rel_addr, noc_data_t buffer) {
         LOGF("Received %016lx to finish the IV", buffer);
     }
     else if (_loaded_size > AES_256_KEY_LEN + AES_BLOCK_LEN) {
-        if (!(_loaded_size & 0xf) || _loaded_size >= _expected_size) {
+        LOGF("Received %016lx for data", buffer);
+        if (!(_loaded_size & 0xf) || _loaded_size > _expected_size) {
             // encrypt a complete 16-byte block
+            _in_fifo_n[_in_fifo_tail & APPL_FIFO_PTR_MASK] = _loaded_size > _expected_size ? _expected_size & 0x1f : 16;
+            
             // advance pointer to next input FIFO entry
             _in_fifo_tail++;
-            _in_fifo_n[_in_fifo_tail & APPL_FIFO_PTR_MASK] = _loaded_size > _expected_size ? _expected_size & 0x1f : 16;
             _cur_ptr = (noc_data_t*)_in_fifo[_in_fifo_tail & APPL_FIFO_PTR_MASK].string;
+            LOGF("Complete buffer, head is %d, tail is %d", _in_fifo_head, _in_fifo_tail);
         }
-        LOGF("Received %016lx for data", buffer);
+        
+        if (_loaded_size == _expected_size) {
+            // encrypt a padding block
+            _in_fifo_n[_in_fifo_tail & APPL_FIFO_PTR_MASK] = 0;
+            
+            // advance pointer to next input FIFO entry
+            _in_fifo_tail++;
+            _cur_ptr = (noc_data_t*)_in_fifo[_in_fifo_tail & APPL_FIFO_PTR_MASK].string;
+            LOGF("Complete buffer, head is %d, tail is %d", _in_fifo_head, _in_fifo_tail);
+        }
     }
     else {
         LOGF("Received %016lx", buffer);
@@ -323,6 +357,8 @@ bool application::read_packet(uint32_t& out_addr, noc_data_t& out_buffer) {
         out_addr = _out_addr;
         out_buffer = _out_fifo[_out_fifo_head & APPL_FIFO_PTR_MASK];
         _out_fifo_head++;
+        
+        _out_addr += sizeof(noc_data_t);
         return true;
     }
     else {
@@ -339,17 +375,16 @@ void application::main() {
         // read input data
         if (_in_fifo_tail != _in_fifo_head) {
             // encrypt dequeued packet from FIFO
-            aes_encrypt_block((aes_block_t)_in_fifo[_in_fifo_head & APPL_FIFO_PTR_MASK], _in_fifo_n[_in_fifo_head & APPL_FIFO_PTR_MASK],
+            aes_encrypt_block((aes_block_t*)(_in_fifo +(_in_fifo_head & APPL_FIFO_PTR_MASK)), _in_fifo_n[_in_fifo_head & APPL_FIFO_PTR_MASK],
                               _subkeys,
-                              _iv,
-                              _iv);
-
-            // copy to output FIFO
-            memcpy(_out_fifo + (_out_fifo_tail & APPL_FIFO_PTR_MASK), _iv.string, AES_BLOCK_LEN);
-            //_out_fifo[_out_fifo_tail & APPL_FIFO_PTR_MASK] = _iv;
-
-            // advance pointers
+                              &_iv,
+                              &_tmp);
             _in_fifo_head++;
+            LOG("Done encrypting block");
+
+            // copy to output FIFO and IV for next encryption
+            memcpy(_iv.string, _tmp.string, AES_BLOCK_LEN);
+            memcpy(_out_fifo + (_out_fifo_tail & APPL_FIFO_PTR_MASK), _tmp.string, AES_BLOCK_LEN);
             _out_fifo_tail += 2;
         }
 

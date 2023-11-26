@@ -85,8 +85,9 @@ class noc_commander : public noc_tile {
         
         /** Buffers. */
         uint8_t _write_buf[AES_256_KEY_LEN + AES_BLOCK_LEN + MAX_DATA_SIZE];
-        uint8_t _exp_buf[MAX_DATA_SIZE];
-        uint32_t _dsize;
+        uint8_t _exp_buf[MAX_OUT_SIZE];
+        uint32_t _write_buf_size;
+        uint32_t _exp_buf_size;
 
         /** Main thread functions. */
         void main();

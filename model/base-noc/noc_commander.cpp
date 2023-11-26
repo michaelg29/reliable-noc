@@ -11,8 +11,8 @@ noc_commander::noc_commander(sc_module_name name) : noc_tile(name) {
     SC_THREAD(recv_listener);
 
     // read buffers
-    _dsize = read_input_files(_write_buf) - AES_BLOCK_LEN - AES_256_KEY_LEN;
-    read_expected_output_file(_exp_buf);
+    _write_buf_size = read_input_files(_write_buf);
+    _exp_buf_size = read_expected_output_file(_exp_buf);
     
     int i = 0;
     printf(  "Encryption key:  ");
@@ -24,11 +24,11 @@ noc_commander::noc_commander(sc_module_name name) : noc_tile(name) {
         printf("%02x ", _write_buf[i]);
     }
     printf("\nInput:           ");
-    for (int j = 0; j < _dsize; ++j, ++i) {
+    for (int j = 0; j < _write_buf_size - AES_BLOCK_LEN - AES_256_KEY_LEN; ++j, ++i) {
         printf("%02x ", _write_buf[i]);
     }
     printf("\nExpected output: ");
-    for (int j = 0; j < _dsize; ++j) {
+    for (int j = 0; j < _exp_buf_size; ++j) {
         printf("%02x ", _exp_buf[j]);
     }
     printf("\n");
@@ -43,9 +43,10 @@ void noc_commander::main() {
     POSEDGE();
     
     // write command
+    _state = NOC_COMMANDER_WRITE_DATA;
     _cur_cmd.skey = NOC_CMD_SKEY;
     _cur_cmd.cmd = 0;
-    _cur_cmd.size = AES_256_KEY_LEN + AES_BLOCK_LEN + _dsize;
+    _cur_cmd.size = _write_buf_size;
     _cur_cmd.tx_addr = 0x0;
     _cur_cmd.trans_id = 1;
     _cur_cmd.status = 0;
@@ -54,7 +55,7 @@ void noc_commander::main() {
     adapter_if->write_packet(0, BASE_ADDR_NOC_RESPONDER, (noc_data_t *)&_cur_cmd, sizeof(noc_cmd_t));
     
     // write payload
-    adapter_if->write_packet(0, BASE_ADDR_NOC_RESPONDER, (noc_data_t *)_write_buf, AES_256_KEY_LEN + AES_BLOCK_LEN + _dsize);
+    adapter_if->write_packet(0, BASE_ADDR_NOC_RESPONDER, (noc_data_t *)_write_buf, _write_buf_size);
     
     // wait for acknowledge
     while (_state != NOC_COMMANDER_IDLE) {
@@ -77,7 +78,7 @@ void noc_commander::recv_listener() {
     while (true) {
         // receive packet
         if (adapter_if->read_packet(src_addr, rel_addr, data)) {
-            LOGF("Received request containing %016lx at %08x", data, rel_addr);
+            LOGF("Commander received request containing %016lx at %08x", data, rel_addr);
         }
     }
 }

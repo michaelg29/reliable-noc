@@ -79,8 +79,11 @@ class application : virtual public sc_interface, public sc_module {
         /** Configure. */
         void configure(uint32_t payload_size, uint32_t out_addr);
 
-        /** Receive packet.*/
-        bool update(bool buffer_valid, uint32_t rel_addr, noc_data_t buffer, uint32_t& out_addr, noc_data_t& out_buffer);
+        /** Receive packet. */
+        void write_packet(uint32_t rel_addr, noc_data_t buffer);
+        
+        /** Read output packet. */
+        bool read_packet(uint32_t& out_addr, noc_data_t& out_buffer);
 
         /** Determine if whole payload processed. */
         bool is_done();

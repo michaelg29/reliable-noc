@@ -160,7 +160,7 @@ void noc_router::main() {
         for (i = 0; i < NOC_N_DIR; ++i) {
             ports[i]->read_port(if_port_dirs[i], data, link_ctrl);
             if (link_ctrl.ctrl) {
-                LOGF("Packet at rtr %d %d on port %d: %08lx @ %08x", _x, _y, i, data, NOC_RECOVER_RAW_ADDR(link_ctrl.dst));
+                //LOGF("Packet at rtr %d %d on port %d: %016lx @ %08x", _x, _y, i, data, NOC_RECOVER_RAW_ADDR(link_ctrl.dst));
                 if (!dir_ctrls[i].write_input(data, link_ctrl)) {
                     // send backpressure
                 }

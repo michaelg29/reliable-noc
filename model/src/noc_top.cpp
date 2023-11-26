@@ -16,9 +16,12 @@ void noc_top::generate_network() {
     // ===== CREATE MODULES =====
     // ==========================
 
-    // create _tiles
+    // create tiles
     _tiles[0][0] = new noc_commander("main_tile");
     _tiles[0][1] = new noc_responder("responder_tile");
+    
+    _app = new application("main_application");
+    ((noc_responder*)_tiles[0][1])->proc_if(*_app);
 
     // create _routers and _adapters
     for (int y = 0; y < NOC_Y_SIZE; ++y) {

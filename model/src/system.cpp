@@ -9,10 +9,10 @@
 #include <time.h>
 #include <string>
 
-char *key_file_name = NULL;
-char *iv_file_name = NULL;
-char *in_file_name = NULL;
-char *expected_out_file_name = NULL;
+char *key_file_name = (char*)"../key.bin";
+char *iv_file_name = (char*)"../iv.bin";
+char *in_file_name = (char*)"../in.bin";
+char *expected_out_file_name = (char*)"../out.bin";
 uint32_t input_size = 0;
 
 bool parse_cmd_line(int argc, char **argv) {
@@ -49,7 +49,7 @@ uint32_t read_input_files(uint8_t *out) {
     // read key file
     FILE *fp = fopen(key_file_name, "rb");
     if (fp) {
-        n += fread(out + n, 32, 1, fp);
+        n += fread(out + n, 1, 32, fp);
         fclose(fp);
     }
     else {
@@ -59,7 +59,7 @@ uint32_t read_input_files(uint8_t *out) {
     // read IV file
     fp = fopen(iv_file_name, "rb");
     if (fp) {
-        n += fread(out + n, 16, 1, fp);
+        n += fread(out + n, 1, 16, fp);
         fclose(fp);
     }
     else {
@@ -78,7 +78,7 @@ uint32_t read_input_files(uint8_t *out) {
             input_size = MAX_DATA_SIZE;
         }
         
-        n += fread(out + n, input_size, 1, fp);
+        n += fread(out + n, 1, input_size, fp);
         fclose(fp);
     }
     else {
@@ -94,7 +94,7 @@ uint32_t read_expected_output_file(uint8_t *out) {
     // read output file
     FILE *fp = fopen(expected_out_file_name, "rb");
     if (fp) {
-        n += fread(out + n, input_size, 1, fp);
+        n += fread(out + n, 1, input_size, fp);
         fclose(fp);
     }
     else {

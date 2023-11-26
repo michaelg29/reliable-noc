@@ -10,7 +10,7 @@
 sc_tracer sc_tracer::tracer;
 
 int sc_main(int argc, char* argv[]) {
-    if (!parseCmdLine(argc, argv)) {
+    if (!parse_cmd_line(argc, argv)) {
         return 1;
     }
 

@@ -279,40 +279,45 @@ void application::configure(uint32_t payload_size, uint32_t out_addr) {
     _expected_size = payload_size;
     _out_addr = out_addr;
     _cur_ptr = (noc_data_t*)_buf;
+
+    LOGF("Configured to receive payload of size %d and write to %08x", payload_size, out_addr);
 }
 
-bool application::update(bool buffer_valid, uint32_t rel_addr, noc_data_t buffer, uint32_t& out_addr, noc_data_t& out_buffer) {
-    if (buffer_valid) {
-        // receive data
-        *_cur_ptr = buffer;
-        _cur_ptr++;
-        _loaded_size += sizeof(noc_data_t);
-        
-        printf("Received %016lx\n", buffer);
+void application::write_packet(uint32_t rel_addr, noc_data_t buffer) {
+    // receive data
+    *_cur_ptr = buffer;
+    _cur_ptr++;
+    _loaded_size += sizeof(noc_data_t);
 
-        if (_loaded_size == AES_256_KEY_LEN) {
-            // generate key schedule
-            aes_generateKeySchedule256(_buf, _subkeys);
+    if (_loaded_size == AES_256_KEY_LEN) {
+        // generate key schedule
+        aes_generateKeySchedule256(_buf, _subkeys);
 
-            // advance pointer to IV buffer
-            _cur_ptr = (noc_data_t*)_iv.string;
-        }
-        else if (_loaded_size == AES_256_KEY_LEN + AES_BLOCK_LEN) {
-            // advance pointer to input buffer
+        // advance pointer to IV buffer
+        _cur_ptr = (noc_data_t*)_iv.string;
+        LOGF("Received %016lx to finish the enc. key", buffer);
+    }
+    else if (_loaded_size == AES_256_KEY_LEN + AES_BLOCK_LEN) {
+        // advance pointer to input buffer
+        _cur_ptr = (noc_data_t*)_in_fifo[_in_fifo_tail & APPL_FIFO_PTR_MASK].string;
+        LOGF("Received %016lx to finish the IV", buffer);
+    }
+    else if (_loaded_size > AES_256_KEY_LEN + AES_BLOCK_LEN) {
+        if (!(_loaded_size & 0xf) || _loaded_size >= _expected_size) {
+            // encrypt a complete 16-byte block
+            // advance pointer to next input FIFO entry
+            _in_fifo_tail++;
+            _in_fifo_n[_in_fifo_tail & APPL_FIFO_PTR_MASK] = _loaded_size > _expected_size ? _expected_size & 0x1f : 16;
             _cur_ptr = (noc_data_t*)_in_fifo[_in_fifo_tail & APPL_FIFO_PTR_MASK].string;
         }
-        else if (_loaded_size > AES_256_KEY_LEN + AES_BLOCK_LEN) {
-            if (!(_loaded_size & 0xf) || _loaded_size >= _expected_size) {
-                // encrypt a complete 16-byte block
-                // advance pointer to next input FIFO entry
-                _in_fifo_tail++;
-                _in_fifo_n[_in_fifo_tail & APPL_FIFO_PTR_MASK] = _loaded_size > _expected_size ? _expected_size & 0x1f : 16;
-                _cur_ptr = (noc_data_t*)_in_fifo[_in_fifo_tail & APPL_FIFO_PTR_MASK].string;
-            }
-        }
+        LOGF("Received %016lx for data", buffer);
     }
+    else {
+        LOGF("Received %016lx", buffer);
+    }
+}
 
-    // send output data
+bool application::read_packet(uint32_t& out_addr, noc_data_t& out_buffer) {
     if (_out_fifo_tail != _out_fifo_head) {
         // dequeue from FIFO
         out_addr = _out_addr;

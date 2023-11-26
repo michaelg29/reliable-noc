@@ -6,7 +6,7 @@ noc_vc::noc_vc(std::string name, bool is_dummy)
     : _name(name), _head(0), _tail(0), _fifo_buf(nullptr), _enqueues(0), _dequeues(0) {
     if (!is_dummy) {
         _fifo_buf = new noc_vc_fifo_t[NOC_VC_BUF_SIZE];
-        
+
         // initialize statistics
         sc_tracer::trace(_enqueues, name, "enqueues");
         sc_tracer::trace(_dequeues, name, "dequeues");
@@ -29,7 +29,6 @@ bool noc_vc::enqueue(noc_data_t data, noc_link_ctrl_t link_ctrl, noc_dir_e pkt_d
     // increment pointer
     _tail++;
     _enqueues++;
-    std::cout << _name << " enqueues " << _enqueues << std::endl;
 
     return true;
 }

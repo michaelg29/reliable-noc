@@ -15,6 +15,8 @@
 #define LOG(a) std::cout << sc_time_stamp() << " - " << a << std::endl;
 #define LOGF(a, ...) std::cout << sc_time_stamp() << " - "; printf(a, __VA_ARGS__); printf("\n")
 
+#define MAX_DATA_SIZE 512
+
 // ===========================
 // ===== DELAY FUNCTIONS =====
 // ===========================
@@ -67,46 +69,8 @@ struct noc_addr_t {
 // ===== HELPER FUNCTIONS =====
 // ============================
 
-bool parseCmdLine(int argc, char **argv);
-
-// ===========================================
-// ===== APPLICATION TYPES AND FUNCTIONS =====
-// ===========================================
-
-/** Command structure. */
-struct noc_cmd_t {
-    uint32_t skey;     // Header start key, must match `NOC_CMD_SKEY`.
-    uint32_t cmd;      // Command to execute.
-    uint32_t size;     // Size of the payload.
-    uint32_t tx_addr;  // Location to write acknowledge packet.
-    uint32_t trans_id; // ID of the transaction.
-    uint32_t status;   // Response status, only used in acknowledge.
-    uint32_t ekey;     // Header end key, must match `NOC_CMD_EKEY`.
-    uint32_t chksum;   // Header checksum.
-};
-#define NOC_CMD_SKEY 0xBEEFCAFE
-#define NOC_CMD_EKEY 0x01234567
-#define N_PACKETS_IN_CMD (sizeof(noc_cmd_t) / sizeof(noc_data_t))
-
-// calculate the checksum of a command packet
-#define CALC_CMD_CHKSUM(cmd) \
-    cmd.skey ^ cmd.cmd ^ cmd.size ^ cmd.tx_addr ^ cmd.trans_id ^ cmd.status ^ cmd.ekey
-
-/** State of the commander. */
-enum noc_commander_state_e {
-    NOC_COMMANDER_IDLE,
-    NOC_COMMANDER_WRITE_CMD,
-    NOC_COMMANDER_WAIT_ACK,
-    NOC_COMMANDER_WRITE_PAYLOAD
-};
-
-/** State of the responder. */
-enum noc_responder_state_e {
-    NOC_RESPONDER_IDLE,
-    NOC_RESPONDER_WAIT_SIZE,
-    NOC_RESPONDER_WAIT_TRANS_ID,
-    NOC_RESPONDER_WAIT_EKEY,
-    NOC_RESPONDER_WAIT_DATA
-};
+bool parse_cmd_line(int argc, char **argv);
+uint32_t read_input_files(uint8_t *out);
+uint32_t read_expected_output_file(uint8_t *out);
 
 #endif // SYSTEM_H

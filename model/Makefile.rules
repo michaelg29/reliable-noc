@@ -6,6 +6,10 @@ EXE           ?= system
 COMP_MODE     ?= BASE
 DISABLE_TRACE ?=
 TRACE_FILE    ?= log
+KEY_FILE      ?= ../key.bin
+IV_FILE       ?= ../iv.bin
+IN_FILE       ?= ../in.bin
+OUT_FILE      ?= ../out.bin
 
 #########################
 ##### Configuration #####
@@ -76,7 +80,7 @@ $(EXE): $(OBJS)
 	$(CXX) -o $@ $^ $(CFLAGS) $(LFLAGS)
 
 run: $(EXE)
-	./$(EXE) $(TRACE_FILE)
+	./$(EXE) $(KEY_FILE) $(IV_FILE) $(IN_FILE) $(OUT_FILE) $(TRACE_FILE)
 
 .PHONY: clean
 

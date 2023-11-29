@@ -32,19 +32,39 @@
 // wait for next CC, then yield priority with another wait statement
 #define POSEDGE() wait(1, SC_NS); wait(0, SC_NS)
 
+// ========================================
+// ===== NoC PARAMETERS AND ADDRESSES =====
+// ========================================
+
+#define NOC_X_SIZE 4
+#define NOC_Y_SIZE 3
+#define NOC_N_TILES (NOC_X_SIZE * NOC_Y_SIZE)
+#define GEN_NOC_BASE_ADDR(x, y) (((x & 0xf) << 24) | ((y & 0xf) << 28))
+#define NOC_N_RESPONDERS 3
+
+// location and address of commander
+#define NOC_X_COMMANDER 1
+#define NOC_Y_COMMANDER 1
+#define NOC_BASE_ADDR_COMMANDER GEN_NOC_BASE_ADDR(NOC_X_COMMANDER, NOC_Y_COMMANDER)
+
+// location and address of responder0
+#define NOC_X_RESPONDER0 2
+#define NOC_Y_RESPONDER0 2
+#define NOC_BASE_ADDR_RESPONDER0 GEN_NOC_BASE_ADDR(NOC_X_RESPONDER0, NOC_Y_RESPONDER0)
+
+// location and address of responder0
+#define NOC_X_RESPONDER1 3
+#define NOC_Y_RESPONDER1 0
+#define NOC_BASE_ADDR_RESPONDER1 GEN_NOC_BASE_ADDR(NOC_X_RESPONDER1, NOC_Y_RESPONDER1)
+
+// location and address of responder0
+#define NOC_X_RESPONDER2 2
+#define NOC_Y_RESPONDER2 1
+#define NOC_BASE_ADDR_RESPONDER2 GEN_NOC_BASE_ADDR(NOC_X_RESPONDER2, NOC_Y_RESPONDER2)
+
 // ================================
 // ===== NoC MACROS AND TYPES =====
 // ================================
-
-// NoC parameters
-#define NOC_X_SIZE 2
-#define NOC_Y_SIZE 1
-#define NOC_N_TILES (NOC_X_SIZE * NOC_Y_SIZE)
-
-// Base addresses
-#define BASE_ADDR_NOC_COMMANDER 0x00000000
-#define BASE_ADDR_NOC_RESPONDER 0x01000000
-#define BASE_ADDR_NOC_MEMORY    0x02000000
 
 /** Data port type. */
 typedef uint64_t noc_data_t;

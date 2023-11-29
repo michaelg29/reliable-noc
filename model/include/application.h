@@ -77,7 +77,7 @@ class application : virtual public sc_interface, public sc_module {
         application(sc_module_name name);
 
         /** Configure. */
-        void configure(uint32_t payload_size, uint32_t out_addr);
+        void configure(uint32_t command, uint32_t payload_size, uint32_t out_addr);
 
         /** Receive packet. */
         void write_packet(uint32_t rel_addr, noc_data_t buffer);

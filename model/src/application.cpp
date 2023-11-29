@@ -302,7 +302,7 @@ application::application(sc_module_name name) : sc_module(name) {
     SC_THREAD(main);
 }
 
-void application::configure(uint32_t payload_size, uint32_t out_addr) {
+void application::configure(uint32_t command, uint32_t payload_size, uint32_t out_addr) {
     _is_busy = true;
     _expected_size = payload_size;
     _out_addr = out_addr;

@@ -20,7 +20,7 @@ class noc_top {
     private:
 
         // modules
-        application *_app;
+        application *_apps[NOC_N_RESPONDERS];
         noc_tile *_tiles[NOC_Y_SIZE][NOC_X_SIZE];
         noc_adapter *_adapters[NOC_Y_SIZE][NOC_X_SIZE];
         noc_router *_routers[NOC_Y_SIZE][NOC_X_SIZE];

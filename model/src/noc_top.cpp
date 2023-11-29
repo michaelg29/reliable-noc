@@ -16,20 +16,32 @@ void noc_top::generate_network() {
     // ===== CREATE MODULES =====
     // ==========================
 
-    // create tiles
-    _tiles[0][0] = new noc_commander("main_tile");
-    _tiles[0][1] = new noc_responder("responder_tile");
+    // create commander tile
+    _tiles[NOC_Y_COMMANDER][NOC_X_COMMANDER] = new noc_commander("commander");
     
-    _app = new application("main_application");
-    ((noc_responder*)_tiles[0][1])->proc_if(*_app);
+    // create responder0 tile
+    _tiles[NOC_Y_RESPONDER0][NOC_X_RESPONDER0] = new noc_responder("responder0");
+    _apps[0] = new application("main_application0");
+    ((noc_responder*)_tiles[NOC_Y_RESPONDER0][NOC_X_RESPONDER0])->proc_if(*_apps[0]);
+    
+    // create responder1 tile
+    _tiles[NOC_Y_RESPONDER1][NOC_X_RESPONDER1] = new noc_responder("responder1");
+    _apps[1] = new application("main_application1");
+    ((noc_responder*)_tiles[NOC_Y_RESPONDER1][NOC_X_RESPONDER1])->proc_if(*_apps[1]);
+    
+    // create responder2 tile
+    _tiles[NOC_Y_RESPONDER2][NOC_X_RESPONDER2] = new noc_responder("responder2");
+    _apps[2] = new application("main_application2");
+    ((noc_responder*)_tiles[NOC_Y_RESPONDER2][NOC_X_RESPONDER2])->proc_if(*_apps[2]);
 
     // create _routers and _adapters
     for (int y = 0; y < NOC_Y_SIZE; ++y) {
         for (int x = 0; x < NOC_X_SIZE; ++x) {
             if (_tiles[y][x]) {
                 _adapters[y][x] = new noc_adapter(("adapter_" + std::to_string(x) + std::to_string(y)).c_str(), x, y);
-                _routers[y][x] = new noc_router(("router_" + std::to_string(x) + std::to_string(y)).c_str(), x, y);
             }
+
+            _routers[y][x] = new noc_router(("router_" + std::to_string(x) + std::to_string(y)).c_str(), x, y);
         }
     }
 
@@ -46,6 +58,9 @@ void noc_top::generate_network() {
                 // connect adapter and router
                 _adapters[y][x]->router_if(*_routers[y][x]);
                 _routers[y][x]->ports[NOC_DIR_TILE](*_adapters[y][x]);
+            }
+            else {
+                _routers[y][x]->ports[NOC_DIR_TILE](dummy_if);
             }
 
             // connect router to neighbors

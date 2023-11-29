@@ -24,8 +24,8 @@ void noc_adapter::read_port(noc_dir_e dir, noc_data_t& data, noc_link_ctrl_t& li
 /** noc_adapter_if.read_packet */
 bool noc_adapter::read_packet(uint32_t& src_addr, uint32_t& rel_addr, noc_data_t& data) {
     // read from the router
-    POSEDGE();
     router_if->read_port(NOC_DIR_TILE, _r_data, _r_link_ctrl);
+    POSEDGE();
 
     // if packet is enabled
     if (_r_link_ctrl.ctrl) {

@@ -53,10 +53,10 @@ void noc_commander::main() {
     _cur_cmd.status = 0;
     _cur_cmd.ekey = NOC_CMD_EKEY;
     _cur_cmd.chksum = CALC_CMD_CHKSUM(_cur_cmd);
-    adapter_if->write_packet(0, BASE_ADDR_NOC_RESPONDER, (noc_data_t *)&_cur_cmd, sizeof(noc_cmd_t));
+    adapter_if->write_packet(0, NOC_BASE_ADDR_RESPONDER2, (noc_data_t *)&_cur_cmd, sizeof(noc_cmd_t));
 
     // write payload
-    adapter_if->write_packet(0, BASE_ADDR_NOC_RESPONDER, (noc_data_t *)_write_buf, _write_buf_size);
+    adapter_if->write_packet(0, NOC_BASE_ADDR_RESPONDER2, (noc_data_t *)_write_buf, _write_buf_size);
 }
 
 void noc_commander::recv_listener() {

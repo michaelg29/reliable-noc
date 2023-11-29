@@ -90,7 +90,7 @@ void noc_responder::recv_listener() {
                 _cur_ack.ekey = NOC_CMD_EKEY;
                 _cur_ack.chksum = (uint32_t)CALC_CMD_CHKSUM(_cur_ack);
                 
-                proc_if->configure(_cur_cmd.size, _cur_cmd.cmd);
+                proc_if->configure(_cur_cmd.cmd, _cur_cmd.size, src_addr);
 
                 // advance state and pointer
                 _state = NOC_RESPONDER_WAIT_DATA;

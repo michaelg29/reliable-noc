@@ -158,6 +158,7 @@ void application::aes_encrypt_block(aes_block_t* in_text, int n,
                        aes_block_t* iv,
                        aes_block_t* out)
 {
+#ifdef LOG_AES
     printf("\nIV:              ");
     for (int j = 0; j < AES_BLOCK_LEN; ++j) {
         printf("%02x ", iv->string[j]);
@@ -166,6 +167,7 @@ void application::aes_encrypt_block(aes_block_t* in_text, int n,
     for (int j = 0; j < n; ++j) {
         printf("%02x ", in_text->string[j]);
     }
+#endif
     
     // represent the state and key as a 4x4 table (read into columns)
     int i = 0;
@@ -209,12 +211,14 @@ void application::aes_encrypt_block(aes_block_t* in_text, int n,
             out->string[i++] = _state.square[r][c];
         }
     }
-    
+
+#ifdef LOG_AES  
     printf("\nOutput:          ");
     for (int j = 0; j < AES_BLOCK_LEN; ++j) {
         printf("%02x ", out->string[j]);
     }
     printf("\n");
+#endif
 }
 
 // ==========================
@@ -222,11 +226,13 @@ void application::aes_encrypt_block(aes_block_t* in_text, int n,
 // ==========================
 
 void aes_generateKeySchedule256(uint8_t in_key[AES_256_KEY_LEN], uint8_t subkeys[AES_256_NR + 1][AES_BLOCK_SIDE][AES_BLOCK_SIDE]) {
+#ifdef LOG_AES
     printf("Key:              ");
     for (int j = 0; j < AES_256_KEY_LEN; ++j) {
         printf("%02x ", in_key[j]);
     }
     printf("\n");
+#endif
     
     // write original key
     int i;
@@ -333,7 +339,6 @@ void application::write_packet(uint32_t rel_addr, noc_data_t buffer) {
             // advance pointer to next input FIFO entry
             _in_fifo_tail++;
             _cur_ptr = (noc_data_t*)_in_fifo[_in_fifo_tail & APPL_FIFO_PTR_MASK].string;
-            LOGF("Complete buffer, head is %d, tail is %d", _in_fifo_head, _in_fifo_tail);
         }
         
         if (_loaded_size == _expected_size) {
@@ -343,7 +348,6 @@ void application::write_packet(uint32_t rel_addr, noc_data_t buffer) {
             // advance pointer to next input FIFO entry
             _in_fifo_tail++;
             _cur_ptr = (noc_data_t*)_in_fifo[_in_fifo_tail & APPL_FIFO_PTR_MASK].string;
-            LOGF("Complete buffer, head is %d, tail is %d", _in_fifo_head, _in_fifo_tail);
         }
     }
     else {
@@ -380,7 +384,6 @@ void application::main() {
                               &_iv,
                               &_tmp);
             _in_fifo_head++;
-            LOG("Done encrypting block");
 
             // copy to output FIFO and IV for next encryption
             memcpy(_iv.string, _tmp.string, AES_BLOCK_LEN);

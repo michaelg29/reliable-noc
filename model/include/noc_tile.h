@@ -88,6 +88,9 @@ class noc_commander : public noc_tile {
         uint8_t _exp_buf[MAX_OUT_SIZE];
         uint32_t _write_buf_size;
         uint32_t _exp_buf_size;
+        
+        /** Transmit a packet to the redundant copies. */
+        void transmit_to_responders(noc_data_t *packets, uint32_t n_bytes);
 
         /** Main thread functions. */
         void main();

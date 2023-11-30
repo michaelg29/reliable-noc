@@ -81,6 +81,7 @@ struct noc_addr_t {
 #define NOC_ADDR_REL_MASK 0x00ffffff
 #define NOC_ADDR_X_MASK   0x0f000000
 #define NOC_ADDR_Y_MASK   0xf0000000
+#define NOC_ADDR_XY_MASK  (NOC_ADDR_X_MASK | NOC_ADDR_Y_MASK)
 #define NOC_GET_REL_ADDR(addr) (addr & NOC_ADDR_REL_MASK)
 #define NOC_GET_X_ADDR(addr)   ((addr & NOC_ADDR_X_MASK) >> 24)
 #define NOC_GET_Y_ADDR(addr)   ((addr & NOC_ADDR_Y_MASK) >> 28)

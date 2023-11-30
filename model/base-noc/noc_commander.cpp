@@ -38,6 +38,28 @@ noc_commander::noc_commander(sc_module_name name) : noc_tile(name) {
     _state = NOC_COMMANDER_IDLE;
 }
 
+void noc_commander::transmit_to_responders(noc_data_t *packets, uint32_t n) {
+    // determine number of packets
+    n = (n / NOC_DSIZE) + ((n % NOC_DSIZE) ? 1 : 0);
+
+    // interleave
+    uint32_t noc_responder0_addr = NOC_BASE_ADDR_RESPONDER0;
+    uint32_t noc_responder1_addr = NOC_BASE_ADDR_RESPONDER1;
+    uint32_t noc_responder2_addr = NOC_BASE_ADDR_RESPONDER2;
+    while (n) {
+        adapter_if->write_packet(0, noc_responder0_addr, packets, sizeof(noc_data_t));
+        adapter_if->write_packet(0, noc_responder1_addr, packets, sizeof(noc_data_t));
+        adapter_if->write_packet(0, noc_responder2_addr, packets, sizeof(noc_data_t));
+
+        // increment counters
+        n--;
+        noc_responder0_addr += NOC_DSIZE;
+        noc_responder1_addr += NOC_DSIZE;
+        noc_responder2_addr += NOC_DSIZE;
+        packets++;
+    }
+}
+
 void noc_commander::main() {
     LOG("Hello, world!");
 
@@ -53,10 +75,11 @@ void noc_commander::main() {
     _cur_cmd.status = 0;
     _cur_cmd.ekey = NOC_CMD_EKEY;
     _cur_cmd.chksum = CALC_CMD_CHKSUM(_cur_cmd);
-    adapter_if->write_packet(0, NOC_BASE_ADDR_RESPONDER2, (noc_data_t *)&_cur_cmd, sizeof(noc_cmd_t));
+    //adapter_if->write_packet(0, NOC_BASE_ADDR_RESPONDER2, (noc_data_t *)&_cur_cmd, sizeof(noc_cmd_t));
+    transmit_to_responders((noc_data_t *)&_cur_cmd, sizeof(noc_cmd_t));
 
     // write payload
-    adapter_if->write_packet(0, NOC_BASE_ADDR_RESPONDER2, (noc_data_t *)_write_buf, _write_buf_size);
+    transmit_to_responders((noc_data_t *)_write_buf, _write_buf_size);
 }
 
 void noc_commander::recv_listener() {
@@ -66,45 +89,51 @@ void noc_commander::recv_listener() {
     noc_data_t data;
 
     // cursors
-    uint32_t data_i;
-    uint32_t out_cursor = 0;
-    
-    // counters
-    uint32_t n_packets_cmp = 0;
-    uint32_t n_bytes_cmp = 0;
-    uint32_t n_err_bytes = 0;
+    uint32_t out_cursor[3] = {0, 0, 0};
+    uint32_t tot_cursor = 0;
+    uint8_t rsp_buf[3][MAX_OUT_SIZE];
 
     while (true) {
         // receive packet
         if (adapter_if->read_packet(src_addr, rel_addr, data)) {
-            LOGF("Commander received request containing %016lx at %08x", data, rel_addr);
-            n_packets_cmp++;
+            LOGF("[%s]: received request containing %016lx to %08x from %08x", this->name(), data, rel_addr, src_addr);
 
-            data_i = 8;
-            while (data_i--) {
-                // compare bytes
-                n_bytes_cmp++;
-                if ((data & 0xff) != _exp_buf[out_cursor]) {
-                    LOGF("Unexpected output at byte %d, expected %02x, received %02x", out_cursor, _exp_buf[out_cursor], (uint8_t)data);
-                    n_err_bytes++;
-                }
-
-                // increment cursor
-                out_cursor++;
-
-                // shift out checked byte
-                data >>= 8;
+            // latch in response buffer
+            if ((src_addr & NOC_ADDR_XY_MASK) == NOC_BASE_ADDR_RESPONDER0) {
+                *(noc_data_t*)(rsp_buf[0] + out_cursor[0]) = data;
+                out_cursor[0] += NOC_DSIZE;
             }
+            else if ((src_addr & NOC_ADDR_XY_MASK) == NOC_BASE_ADDR_RESPONDER1) {
+                *(noc_data_t*)(rsp_buf[1] + out_cursor[1]) = data;
+                out_cursor[1] += NOC_DSIZE;
+            }
+            else if ((src_addr & NOC_ADDR_XY_MASK) == NOC_BASE_ADDR_RESPONDER2) {
+                *(noc_data_t*)(rsp_buf[2] + out_cursor[2]) = data;
+                out_cursor[2] += NOC_DSIZE;
+            }
+            tot_cursor += NOC_DSIZE;
 
-            if (out_cursor >= _exp_buf_size) {
+            if (tot_cursor >= (3 * _exp_buf_size)) {
                 LOG("Setting to IDLE");
                 _state == NOC_COMMANDER_IDLE;
                 break;
             }
         }
     }
-    
-    printf("Final report: %d packets compared, %d bytes compared, %d errors\n", n_packets_cmp, n_bytes_cmp, n_err_bytes);
-    
+
+    // compare received and expected buffer
+    uint32_t n_bytes_cmp = 0;
+    uint32_t n_err_bytes = 0;
+    for (int r = 0; r < 3; ++r) {
+        for (int i = 0; i < MAX_OUT_SIZE; ++i) {
+            if (rsp_buf[r][i] != _exp_buf[i]) {
+                LOGF("Unexpected output for responder %d at byte %d, expected %02x, received %02x", r, i, _exp_buf[i], rsp_buf[r][i]);
+                n_err_bytes++;
+            }
+            n_bytes_cmp++;
+        }
+    }
+    printf("Final report: %d bytes compared, %d errors\n", n_bytes_cmp, n_err_bytes);
+
     sc_stop();
 }

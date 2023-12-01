@@ -77,18 +77,18 @@ class noc_commander : public noc_tile {
         noc_commander(sc_module_name name);
 
     private:
-    
+
         /** Current state. */
         noc_cmd_t _cur_cmd;
         noc_cmd_t _cur_ack;
         noc_commander_state_e _state;
-        
+
         /** Buffers. */
         uint8_t _write_buf[AES_256_KEY_LEN + AES_BLOCK_LEN + MAX_DATA_SIZE];
         uint8_t _exp_buf[MAX_OUT_SIZE];
         uint32_t _write_buf_size;
         uint32_t _exp_buf_size;
-        
+
         /** Transmit a packet to the redundant copies. */
         void transmit_to_responders(noc_data_t *packets, uint32_t n_bytes);
 
@@ -102,7 +102,7 @@ class noc_commander : public noc_tile {
 class noc_responder : public noc_tile {
 
     public:
-    
+
         sc_port<application> proc_if;
 
         /** Constructor. */
@@ -110,7 +110,7 @@ class noc_responder : public noc_tile {
         noc_responder(sc_module_name name);
 
     private:
-    
+
         /** Current state. */
         noc_cmd_t _cur_cmd;
         noc_cmd_t _cur_ack;

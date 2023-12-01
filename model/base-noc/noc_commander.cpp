@@ -87,10 +87,13 @@ void noc_commander::recv_listener() {
     uint32_t src_addr;
     uint32_t rel_addr;
     noc_data_t data;
+    int32_t redundant_src_idx;
 
     // cursors
     uint32_t out_cursor[3] = {0, 0, 0};
     uint32_t tot_cursor = 0;
+
+    // buffers
     uint8_t rsp_buf[3][MAX_OUT_SIZE];
 
     while (true) {
@@ -98,20 +101,20 @@ void noc_commander::recv_listener() {
         if (adapter_if->read_packet(src_addr, rel_addr, data)) {
             LOGF("[%s]: received request containing %016lx to %08x from %08x", this->name(), data, rel_addr, src_addr);
 
-            // latch in response buffer
-            if ((src_addr & NOC_ADDR_XY_MASK) == NOC_BASE_ADDR_RESPONDER0) {
-                *(noc_data_t*)(rsp_buf[0] + out_cursor[0]) = data;
-                out_cursor[0] += NOC_DSIZE;
+            // determine source
+            switch (src_addr & NOC_ADDR_XY_MASK) {
+            case NOC_BASE_ADDR_RESPONDER0: redundant_src_idx = 0; break;
+            case NOC_BASE_ADDR_RESPONDER1: redundant_src_idx = 1; break;
+            case NOC_BASE_ADDR_RESPONDER2: redundant_src_idx = 2; break;
+            default: redundant_src_idx = -1; break;
+            };
+
+            // store in internal buffer
+            if (redundant_src_idx >= 0) {
+                *(noc_data_t*)(rsp_buf[redundant_src_idx] + out_cursor[redundant_src_idx]) = data;
+                out_cursor[redundant_src_idx] += NOC_DSIZE;
+                tot_cursor += NOC_DSIZE;
             }
-            else if ((src_addr & NOC_ADDR_XY_MASK) == NOC_BASE_ADDR_RESPONDER1) {
-                *(noc_data_t*)(rsp_buf[1] + out_cursor[1]) = data;
-                out_cursor[1] += NOC_DSIZE;
-            }
-            else if ((src_addr & NOC_ADDR_XY_MASK) == NOC_BASE_ADDR_RESPONDER2) {
-                *(noc_data_t*)(rsp_buf[2] + out_cursor[2]) = data;
-                out_cursor[2] += NOC_DSIZE;
-            }
-            tot_cursor += NOC_DSIZE;
 
             if (tot_cursor >= (3 * _exp_buf_size)) {
                 LOG("Setting to IDLE");

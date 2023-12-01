@@ -15,7 +15,7 @@
 #define LOG(a) std::cout << sc_time_stamp() << " - " << a << std::endl;
 #define LOGF(a, ...) std::cout << sc_time_stamp() << " - "; printf(a, __VA_ARGS__); printf("\n")
 
-#define MAX_DATA_SIZE 16
+#define MAX_DATA_SIZE 48
 #define MAX_OUT_SIZE MAX_DATA_SIZE + 16
 
 // ===========================

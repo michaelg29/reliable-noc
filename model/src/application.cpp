@@ -128,7 +128,7 @@ void aes_shiftRows(uint8_t state[AES_BLOCK_SIDE][AES_BLOCK_SIDE])
     {
         // treat each row as a uint32
         row = *(uint32_t*)state[r >> 3];
-        *(uint32_t*)state[r >> 3] = (row >> r) | (row << (32 - r));
+        *(uint32_t*)state[r >> 3] = (row << r) | (row >> (32 - r));
     }
 }
 
@@ -204,19 +204,20 @@ void application::aes_encrypt_block(aes_block_t* in_text, int n,
 
     // copy bytes of state into the output column by column
     i = 0;
+#ifdef LOG_AES
+    printf("\nOutput:          ");
+#endif
     for (int c = 0; c < AES_BLOCK_SIDE; c++)
     {
         for (int r = 0; r < AES_BLOCK_SIDE; r++)
         {
             out->string[i++] = _state.square[r][c];
+#ifdef LOG_AES
+            printf("%02x ", _state.square[r][c]);
+#endif
         }
     }
-
-#ifdef LOG_AES  
-    printf("\nOutput:          ");
-    for (int j = 0; j < AES_BLOCK_LEN; ++j) {
-        printf("%02x ", out->string[j]);
-    }
+#ifdef LOG_AES
     printf("\n");
 #endif
 }

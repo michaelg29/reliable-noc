@@ -2,6 +2,7 @@
 #include "systemc.h"
 
 #include "system.h"
+#include "checksum.h"
 #include "application.h"
 #include "noc_adapter.h"
 
@@ -50,6 +51,10 @@ enum noc_responder_state_e {
     NOC_RESPONDER_WAIT_DATA
 };
 
+// determine number of checkpoints to store
+#define CHECKPOINT_SIZE (2*sizeof(noc_data_t))
+#define N_CHECKPOINTS (MAX_OUT_SIZE / CHECKPOINT_SIZE)
+
 // ========================
 // ===== TILE MODULES =====
 // ========================
@@ -86,6 +91,7 @@ class noc_commander : public noc_tile {
         /** Buffers. */
         uint8_t _write_buf[AES_256_KEY_LEN + AES_BLOCK_LEN + MAX_DATA_SIZE];
         uint8_t _exp_buf[MAX_OUT_SIZE];
+        uint8_t _rsp_buf[MAX_OUT_SIZE];
         uint32_t _write_buf_size;
         uint32_t _exp_buf_size;
 

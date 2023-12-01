@@ -168,7 +168,7 @@ void application::aes_encrypt_block(aes_block_t* in_text, int n,
         printf("%02x ", in_text->string[j]);
     }
 #endif
-    
+
     // represent the state and key as a 4x4 table (read into columns)
     int i = 0;
     for (int c = 0; c < AES_BLOCK_SIDE; c++)
@@ -234,7 +234,7 @@ void aes_generateKeySchedule256(uint8_t in_key[AES_256_KEY_LEN], uint8_t subkeys
     }
     printf("\n");
 #endif
-    
+
     // write original key
     int i;
     for (i = 0; i < 8; i++) {
@@ -299,7 +299,7 @@ application::application(sc_module_name name) : sc_module(name) {
     _is_busy = false;
     _out_fifo_head = 0;
     _out_fifo_tail = 0;
-    
+
     SC_THREAD(main);
 }
 
@@ -336,16 +336,16 @@ void application::write_packet(uint32_t rel_addr, noc_data_t buffer) {
         if (!(_loaded_size & 0xf) || _loaded_size > _expected_size) {
             // encrypt a complete 16-byte block
             _in_fifo_n[_in_fifo_tail & APPL_FIFO_PTR_MASK] = _loaded_size > _expected_size ? _expected_size & 0x1f : 16;
-            
+
             // advance pointer to next input FIFO entry
             _in_fifo_tail++;
             _cur_ptr = (noc_data_t*)_in_fifo[_in_fifo_tail & APPL_FIFO_PTR_MASK].string;
         }
-        
+
         if (_loaded_size == _expected_size) {
             // encrypt a padding block
             _in_fifo_n[_in_fifo_tail & APPL_FIFO_PTR_MASK] = 0;
-            
+
             // advance pointer to next input FIFO entry
             _in_fifo_tail++;
             _cur_ptr = (noc_data_t*)_in_fifo[_in_fifo_tail & APPL_FIFO_PTR_MASK].string;
@@ -362,7 +362,7 @@ bool application::read_packet(uint32_t& out_addr, noc_data_t& out_buffer) {
         out_addr = _out_addr;
         out_buffer = _out_fifo[_out_fifo_head & APPL_FIFO_PTR_MASK];
         _out_fifo_head++;
-        
+
         _out_addr += sizeof(noc_data_t);
         return true;
     }

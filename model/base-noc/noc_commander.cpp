@@ -3,6 +3,7 @@
 
 #include "systemc.h"
 
+#include "checksum.h"
 #include "system.h"
 #include "noc_tile.h"
 
@@ -75,7 +76,6 @@ void noc_commander::main() {
     _cur_cmd.status = 0;
     _cur_cmd.ekey = NOC_CMD_EKEY;
     _cur_cmd.chksum = CALC_CMD_CHKSUM(_cur_cmd);
-    //adapter_if->write_packet(0, NOC_BASE_ADDR_RESPONDER2, (noc_data_t *)&_cur_cmd, sizeof(noc_cmd_t));
     transmit_to_responders((noc_data_t *)&_cur_cmd, sizeof(noc_cmd_t));
 
     // write payload
@@ -87,14 +87,17 @@ void noc_commander::recv_listener() {
     uint32_t src_addr;
     uint32_t rel_addr;
     noc_data_t data;
-    int32_t redundant_src_idx;
-
-    // cursors
-    uint32_t out_cursor[3] = {0, 0, 0};
-    uint32_t tot_cursor = 0;
 
     // buffers
-    uint8_t rsp_buf[3][MAX_OUT_SIZE];
+    uint32_t tot_cursor = 0;
+    uint8_t rsp_buf[MAX_OUT_SIZE];
+
+    // keep track of redundant communications
+    int32_t redundant_src_idx;
+    uint32_t checkpoint_size = 4; // checkpoints every 4 packets (32B)
+    tmr_packet_status_e status;
+    noc_data_t *out_cursor = (noc_data_t*)rsp_buf;
+    tmr_state_collection states(checkpoint_size, MAX_OUT_SIZE / sizeof(noc_data_t) / checkpoint_size);
 
     while (true) {
         // receive packet
@@ -109,32 +112,37 @@ void noc_commander::recv_listener() {
             default: redundant_src_idx = -1; break;
             };
 
-            // store in internal buffer
-            if (redundant_src_idx >= 0) {
-                *(noc_data_t*)(rsp_buf[redundant_src_idx] + out_cursor[redundant_src_idx]) = data;
-                out_cursor[redundant_src_idx] += NOC_DSIZE;
-                tot_cursor += NOC_DSIZE;
-            }
+            // update CRC
+            status = states.update(redundant_src_idx, data, out_cursor);
+            if (status == TMR_STATUS_COMMIT) {
+                LOGF("Majority reached for byte 0x%x\n", tot_cursor);
+                // update cursors after result commit
+                out_cursor += checkpoint_size;
+                tot_cursor += NOC_DSIZE * checkpoint_size;
 
-            if (tot_cursor >= (3 * _exp_buf_size)) {
-                LOG("Setting to IDLE");
-                _state == NOC_COMMANDER_IDLE;
+                if (tot_cursor >= _exp_buf_size) {
+                    LOG("Setting to IDLE");
+                    _state == NOC_COMMANDER_IDLE;
+                    break;
+                }
+            }
+            else if (status == TMR_STATUS_INVALID) {
+                LOGF("Invalid vote, no majority reached at byte 0x%x\n", tot_cursor);
                 break;
             }
         }
     }
 
     // compare received and expected buffer
+    LOG("Completed simulation, checking output...");
     uint32_t n_bytes_cmp = 0;
     uint32_t n_err_bytes = 0;
-    for (int r = 0; r < 3; ++r) {
-        for (int i = 0; i < MAX_OUT_SIZE; ++i) {
-            if (rsp_buf[r][i] != _exp_buf[i]) {
-                LOGF("Unexpected output for responder %d at byte %d, expected %02x, received %02x", r, i, _exp_buf[i], rsp_buf[r][i]);
-                n_err_bytes++;
-            }
-            n_bytes_cmp++;
+    for (int i = 0; i < MAX_OUT_SIZE; ++i) {
+        if (rsp_buf[i] != _exp_buf[i]) {
+            //LOGF("Unexpected output at byte %d, expected %02x, received %02x", i, _exp_buf[i], rsp_buf[i]);
+            n_err_bytes++;
         }
+        n_bytes_cmp++;
     }
     printf("Final report: %d bytes compared, %d errors\n", n_bytes_cmp, n_err_bytes);
 

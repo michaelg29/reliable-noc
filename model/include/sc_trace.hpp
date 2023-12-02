@@ -12,7 +12,7 @@ class sc_tracer {
 
     public:
 
-        /** Global instance */
+        /** Global singleton instance */
         static sc_tracer tracer;
 
         /** Constructor specifying output file. */
@@ -33,13 +33,13 @@ class sc_tracer {
                 sc_trace(tracer._tf, value, ss.str().c_str());
             }
         }
-        
+
         /** Trace a signal. */
         template <class T>
         static void trace(T& value, const char *module_name, const char *signal_name) {
             trace(value, sc_module_name(module_name), signal_name);
         }
-        
+
         /** Trace a signal. */
         template <class T>
         static void trace(T& value, std::string module_name, const char *signal_name) {

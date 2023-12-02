@@ -1,12 +1,14 @@
 
 #include "system.h"
-#include "noc_top.h"
+#include "sc_fault_inject.hpp"
 #include "sc_trace.hpp"
+#include "noc_top.h"
 
 #include "systemc.h"
 #include <iostream>
 #include <string>
 
+sc_fault_injector sc_fault_injector::injector;
 sc_tracer sc_tracer::tracer;
 
 int sc_main(int argc, char* argv[]) {
@@ -29,15 +31,13 @@ int sc_main(int argc, char* argv[]) {
     // ==============================
 
     std::cout << "Starting simulation..." << std::endl;
-    sc_time startTime = sc_time_stamp();
-    sc_start();
-    sc_time stopTime = sc_time_stamp();
+    sc_time duration = sc_fault_injector::simulate(10, SC_NS);
 
     // ===================
     // ===== CLEANUP =====
     // ===================
 
-    std::cout << "Simulated for " << (stopTime - startTime) << std::endl;
+    std::cout << "Simulated for " << duration << std::endl;
 
     sc_tracer::close();
 

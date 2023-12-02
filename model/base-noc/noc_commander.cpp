@@ -3,7 +3,7 @@
 
 #include "systemc.h"
 
-#include "checksum.h"
+#include "checksum.hpp"
 #include "system.h"
 #include "noc_tile.h"
 
@@ -97,7 +97,7 @@ void noc_commander::recv_listener() {
     uint32_t checkpoint_size = 4; // checkpoints every 4 packets (32B)
     tmr_packet_status_e status;
     noc_data_t *out_cursor = (noc_data_t*)rsp_buf;
-    tmr_state_collection states(checkpoint_size, MAX_OUT_SIZE / sizeof(noc_data_t) / checkpoint_size);
+    tmr_state_collection<noc_data_t> states(checkpoint_size, MAX_OUT_SIZE / sizeof(noc_data_t) / checkpoint_size);
 
     while (true) {
         // receive packet

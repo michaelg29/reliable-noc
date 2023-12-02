@@ -8,9 +8,12 @@
 
 /** Representation of variable to be upset. */
 struct fault_injectable_variable_t {
-    uint8_t *ptr;            // pointer to variable
-    uint32_t size;           // size
-    uint32_t rand_threshold; // probability of fault per byte
+    char *name;               // name
+    uint8_t *ptr;             // pointer to variable
+    uint32_t size;            // size
+    uint32_t rand_threshold;  // probability of fault per byte
+    uint32_t fault_count;     // fault injection count
+    uint32_t pos_fault_count; // possible fault injection count
 };
 
 class sc_fault_injector;
@@ -43,18 +46,35 @@ class sc_fault_injector {
          *
          * @param value The variable into which inject faults.
          * @param prob  The probability of fault per byte per simulation step when running `simulate`. In mathematical terms, the total probability looks like: `prob` faults/step / (`_step_size`*`_step_unit` s/step) = `prob` / (`_step_size`*`_step_unit`) faults/s.
+         * @param name  The display name of the variable.
          */
         template <class T>
-        static void set_injectable(T& value, float prob = 0.01f) {
+        static void set_injectable(T& value, float prob = 0.01f, char* name = NULL) {
+            set_injectable_ptr<T>(&value, 1, prob, name);
+        }
+
+        /**
+         * Register a variable array for fault injection.
+         *
+         * @param value The variable into which inject faults.
+         * @param n     The number of variables in the array.
+         * @param prob  The probability of fault per byte per simulation step when running `simulate`. In mathematical terms, the total probability looks like: `prob` faults/step / (`_step_size`*`_step_unit` s/step) = `prob` / (`_step_size`*`_step_unit`) faults/s.
+         * @param name  The display name of the variable.
+         */
+        template <class T>
+        static void set_injectable_ptr(T* value, uint32_t n, float prob = 0.01f, char* name = NULL) {
             // check bounds
             if (prob > injector._max_prob) prob = injector._max_prob;
             if (prob < injector._min_prob) prob = injector._min_prob;
 
             // generate structure
             fault_injectable_variable_t registration;
-            registration.ptr = (uint8_t*)&value;
-            registration.size = sizeof(T);
+            registration.name = name;
+            registration.ptr = (uint8_t*)value;
+            registration.size = sizeof(T) * n;
             registration.rand_threshold = (uint32_t)(prob * (double)((uint32_t)0xffffffff)); // compute integer value for threshold
+            registration.fault_count = 0;
+            registration.pos_fault_count = 0;
             injector._var_list.push_back(registration);
         }
 
@@ -79,13 +99,16 @@ class sc_fault_injector {
                 // if enabled, inject faults into registration list
                 uint32_t rand_val;
                 uint8_t fault_bit;
-                for (fault_injectable_variable_t var : injector._var_list) {
+                for (fault_injectable_variable_t &var : injector._var_list) {
                     uint8_t *ptr = var.ptr;
                     uint32_t n_bytes = var.size;
                     while (n_bytes) {
                         // probability of random fault
                         rand_val = (uint32_t)rand();
                         if (rand_val < var.rand_threshold) {
+                            std::cout << var.name << " possible fault" << std::endl;
+                            var.pos_fault_count++;
+
                             // determine which bit to upset
                             fault_bit = (uint32_t)(rand()) & 0x7;
                             fault_bit = 0b1 << fault_bit;
@@ -93,10 +116,12 @@ class sc_fault_injector {
                             // perform mask
                             if ((uint32_t)rand() & 0b1) {
                                 // possible 0 --> 1 fault
+                                if (!(*ptr & fault_bit)) var.fault_count++;
                                 *ptr |= fault_bit;
                             }
                             else {
                                 // possible 1 --> 0 fault
+                                if (*ptr & fault_bit) var.fault_count++;
                                 *ptr ^= fault_bit;
                             }
                         }
@@ -105,6 +130,8 @@ class sc_fault_injector {
                         n_bytes--;
                         ptr++;
                     }
+
+                    std::cout << var.name << " has a fault count of " << var.fault_count << " and a possible fault count of " << var.pos_fault_count << std::endl;
                 }
             }
 
@@ -113,6 +140,9 @@ class sc_fault_injector {
                 sc_start();
             }
             sc_time stop_time = sc_time_stamp();
+
+            // print report
+            print();
 
             // return duration
             return stop_time - start_time;
@@ -126,6 +156,16 @@ class sc_fault_injector {
         /** Enable tracing. */
         static void enable() {
             injector._enabled = true;
+        }
+
+        static void print() {
+            uint32_t total_faults = 0;
+            uint32_t total_size = 0;
+            for (fault_injectable_variable_t &var : injector._var_list) {
+                total_faults += var.fault_count;
+                total_size += var.size;
+            }
+            std::cout << "Total of " << total_faults << " faults over " << total_size << " bytes." << std::endl;
         }
 
     private:

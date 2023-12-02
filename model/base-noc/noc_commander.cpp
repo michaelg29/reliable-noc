@@ -88,22 +88,24 @@ void noc_commander::recv_listener() {
     uint32_t rel_addr;
     noc_data_t data;
 
-    // buffers
-    uint32_t tot_cursor = 0;
-    uint8_t rsp_buf[MAX_OUT_SIZE];
-
     // keep track of redundant communications
     int32_t redundant_src_idx;
     uint32_t checkpoint_size = 4; // checkpoints every 4 packets (32B)
     tmr_packet_status_e status;
-    noc_data_t *out_cursor = (noc_data_t*)rsp_buf;
     tmr_state_collection<noc_data_t> states(checkpoint_size, MAX_OUT_SIZE / sizeof(noc_data_t) / checkpoint_size);
+
+    // buffers
+    uint32_t tot_cursor = 0;
+    uint8_t rsp_buf[NOC_DSIZE * checkpoint_size];
+    memset(rsp_buf, 0, NOC_DSIZE * checkpoint_size);
+
+    // comparison counters
+    uint32_t n_bytes_cmp = 0;
+    uint32_t n_err_bytes = 0;
 
     while (true) {
         // receive packet
         if (adapter_if->read_packet(src_addr, rel_addr, data)) {
-            LOGF("[%s]: received request containing %016lx to %08x from %08x", this->name(), data, rel_addr, src_addr);
-
             // determine source
             switch (src_addr & NOC_ADDR_XY_MASK) {
             case NOC_BASE_ADDR_RESPONDER0: redundant_src_idx = 0; break;
@@ -112,13 +114,20 @@ void noc_commander::recv_listener() {
             default: redundant_src_idx = -1; break;
             };
 
+            LOGF("[%s]: received request containing %016lx to %08x from application %d", this->name(), data, rel_addr, redundant_src_idx);
+
             // update CRC
-            status = states.update(redundant_src_idx, data, out_cursor);
+            status = states.update(redundant_src_idx, data, (noc_data_t*)rsp_buf);
             if (status == TMR_STATUS_COMMIT) {
                 LOGF("Majority reached for byte 0x%x\n", tot_cursor);
-                // update cursors after result commit
-                out_cursor += checkpoint_size;
-                tot_cursor += NOC_DSIZE * checkpoint_size;
+                printf("Error count goes from %d to ", n_err_bytes);
+                for (int i = 0, max_i = NOC_DSIZE * checkpoint_size; i < max_i; ++i, tot_cursor++) {
+                    if (rsp_buf[i] != _exp_buf[tot_cursor]) {
+                        n_err_bytes++;
+                    }
+                    n_bytes_cmp++;
+                }
+                printf("%d, compared a total of %d bytes\n", n_err_bytes, n_bytes_cmp);
 
                 if (tot_cursor >= _exp_buf_size) {
                     LOG("Setting to IDLE");
@@ -128,6 +137,11 @@ void noc_commander::recv_listener() {
             }
             else if (status == TMR_STATUS_INVALID) {
                 LOGF("Invalid vote, no majority reached at byte 0x%x\n", tot_cursor);
+
+                int max_i = tot_cursor + checkpoint_size * NOC_DSIZE;
+                printf("Expected: ");
+                for (int i = tot_cursor; i < max_i; ++i) printf("%s%02x", !(i & 0x7) ? " " : "", _exp_buf[i]);
+                printf("\n");
                 break;
             }
         }
@@ -135,15 +149,6 @@ void noc_commander::recv_listener() {
 
     // compare received and expected buffer
     LOG("Completed simulation, checking output...");
-    uint32_t n_bytes_cmp = 0;
-    uint32_t n_err_bytes = 0;
-    for (int i = 0; i < MAX_OUT_SIZE; ++i) {
-        if (rsp_buf[i] != _exp_buf[i]) {
-            //LOGF("Unexpected output at byte %d, expected %02x, received %02x", i, _exp_buf[i], rsp_buf[i]);
-            n_err_bytes++;
-        }
-        n_bytes_cmp++;
-    }
     printf("Final report: %d bytes compared, %d errors\n", n_bytes_cmp, n_err_bytes);
 
     sc_stop();

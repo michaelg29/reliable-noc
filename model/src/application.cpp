@@ -5,8 +5,9 @@
 
 #include "systemc.h"
 
-#include "application.h"
 #include "system.h"
+#include "sc_fault_inject.hpp"
+#include "application.h"
 
 // ============================
 // ===== REFERENCE TABLES =====
@@ -300,6 +301,8 @@ application::application(sc_module_name name) : sc_module(name) {
     _out_fifo_head = 0;
     _out_fifo_tail = 0;
 
+    sc_fault_injector::set_injectable_ptr(_iv.string, AES_BLOCK_LEN, 0.01f, (char*)this->name());
+
     SC_THREAD(main);
 }
 
@@ -324,15 +327,12 @@ void application::write_packet(uint32_t rel_addr, noc_data_t buffer) {
 
         // advance pointer to IV buffer
         _cur_ptr = (noc_data_t*)_iv.string;
-        LOGF("Received %016lx to finish the enc. key", buffer);
     }
     else if (_loaded_size == AES_256_KEY_LEN + AES_BLOCK_LEN) {
         // advance pointer to input buffer
         _cur_ptr = (noc_data_t*)_in_fifo[_in_fifo_tail & APPL_FIFO_PTR_MASK].string;
-        LOGF("Received %016lx to finish the IV", buffer);
     }
     else if (_loaded_size > AES_256_KEY_LEN + AES_BLOCK_LEN) {
-        LOGF("Received %016lx for data", buffer);
         if (!(_loaded_size & 0xf) || _loaded_size > _expected_size) {
             // encrypt a complete 16-byte block
             _in_fifo_n[_in_fifo_tail & APPL_FIFO_PTR_MASK] = _loaded_size > _expected_size ? _expected_size & 0x1f : 16;
@@ -350,9 +350,6 @@ void application::write_packet(uint32_t rel_addr, noc_data_t buffer) {
             _in_fifo_tail++;
             _cur_ptr = (noc_data_t*)_in_fifo[_in_fifo_tail & APPL_FIFO_PTR_MASK].string;
         }
-    }
-    else {
-        LOGF("Received %016lx", buffer);
     }
 }
 

@@ -136,7 +136,7 @@ class tmr_state_collection {
             // compare checkpoints if no majority already found
             if (new_checkpoint && new_checkpoint > _confirmed_checkpoint) {
                 bool prev_match = true;
-                uint32_t other_crc; // store CRC from the other module
+                uint32_t other_crc; // store CRC from another module
                 for (int i = 0; i < 3; ++i) {
                     // check other module for their CRC copy
                     if (i != redundant_idx && _states[i]->get_crc(new_checkpoint, other_crc)) {

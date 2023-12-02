@@ -23,6 +23,12 @@ class sc_fault_injector {
         /** Global singleton instance. */
         static sc_fault_injector injector;
 
+        /** Initializer specifying output file. */
+        static void init(double step_size, sc_time_unit time_unit) {
+            injector._step_size = step_size;
+            injector._step_unit = time_unit;
+        }
+
         /** Configure maximum and minimum probability bounds. Default is 1.0f and 0.0f. */
         static void configure_bounds(float max_prob, float min_prob) {
             if (max_prob > 1.0f) max_prob = 1.0f;
@@ -36,7 +42,7 @@ class sc_fault_injector {
          * Register a variable for fault injection.
          *
          * @param value The variable into which inject faults.
-         * @param prob  The probability of fault per byte per simulation step when running `simulate`.
+         * @param prob  The probability of fault per byte per simulation step when running `simulate`. In mathematical terms, the total probability looks like: `prob` faults/step / (`_step_size`*`_step_unit` s/step) = `prob` / (`_step_size`*`_step_unit`) faults/s.
          */
         template <class T>
         static void set_injectable(T& value, float prob = 0.01f) {
@@ -52,18 +58,25 @@ class sc_fault_injector {
             injector._var_list.push_back(registration);
         }
 
-        /** Run the simulation, stepping step_size of the time unit before testing for injection. Return the duration. */
-        static sc_time simulate(double step_size, sc_time_unit time_unit, double max_time = -1.0) {
+        /** Run the simulation, stepping `_step_size` `_step_unit` before testing for injection. Returns the duration. */
+        static sc_time simulate(double max_time = -1.0) {
             srand(time(0));
 
             double time = 0.0;
             sc_time start_time = sc_time_stamp();
-            while (true) {
+            while (injector._enabled) {
                 // simulate a step
-                sc_start(step_size, time_unit);
-                time += step_size;
+                sc_start(injector._step_size, injector._step_unit);
+                time += injector._step_size;
 
-                // inject faults into registration list
+                // check if done
+                if ((max_time > 0.0 && time >= max_time) || !sc_pending_activity_at_current_time()) {
+                    break;
+                }
+
+                if (!injector._enabled) continue;
+
+                // if enabled, inject faults into registration list
                 uint32_t rand_val;
                 uint8_t fault_bit;
                 for (fault_injectable_variable_t var : injector._var_list) {
@@ -93,22 +106,40 @@ class sc_fault_injector {
                         ptr++;
                     }
                 }
+            }
 
-                // check if done
-                if ((max_time > 0.0 && time >= max_time) || !sc_pending_activity_at_current_time()) {
-                    break;
-                }
+            // if never started (stepper disabled), run until completion
+            if (time == 0.0) {
+                sc_start();
             }
             sc_time stop_time = sc_time_stamp();
 
+            // return duration
             return stop_time - start_time;
+        }
+
+        /** Disable tracing. */
+        static void disable() {
+            injector._enabled = false;
+        }
+
+        /** Enable tracing. */
+        static void enable() {
+            injector._enabled = true;
         }
 
     private:
 
+        /** Enable switch. */
+        bool _enabled = true;
+
         /** Bounds. */
         float _max_prob = 1.0f;
         float _min_prob = 0.0f;
+
+        /** Simulation step size. */
+        double _step_size = 10;
+        sc_time_unit _step_unit = SC_NS;
 
         /** Internal list. */
         std::vector<fault_injectable_variable_t> _var_list;

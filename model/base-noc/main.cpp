@@ -31,7 +31,7 @@ int sc_main(int argc, char* argv[]) {
     // ==============================
 
     std::cout << "Starting simulation..." << std::endl;
-    sc_time duration = sc_fault_injector::simulate(10, SC_NS);
+    sc_time duration = sc_fault_injector::simulate();
 
     // ===================
     // ===== CLEANUP =====

@@ -15,12 +15,12 @@ class sc_tracer {
         /** Global singleton instance */
         static sc_tracer tracer;
 
-        /** Constructor specifying output file. */
-        static void init(const char *out_file) {
+        /** Initializer specifying output file. */
+        static void init(const char *out_file, sc_time_unit time_unit) {
             if (tracer._enabled) {
                 std::cout << "Opening trace file " << out_file << std::endl;
                 tracer._tf = sc_create_vcd_trace_file(out_file);
-                tracer._tf->set_time_unit(1, SC_NS);
+                tracer._tf->set_time_unit(1, time_unit);
             }
         }
 

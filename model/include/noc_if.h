@@ -12,10 +12,34 @@ enum noc_dir_e {
     NOC_DIR_X_MINUS,
     NOC_DIR_Y_PLUS,
     NOC_DIR_Y_MINUS,
+#if NOC_MODE == NOC_MODE_BASE
     NOC_DIR_TILE,
+#elif NOC_MODE == NOC_MODE_REDUNDANT
+    NOC_DIR_TILE0,
+    NOC_DIR_TILE1,
+    NOC_DIR_TILE2,
+#endif
     NOC_DIR_NULL
 };
-#define NOC_N_DIR (uint32_t)(NOC_DIR_NULL)
+
+/** Type of port. */
+enum noc_port_mode_e {
+    NOC_PORT_DUMMY, // = 0b00,
+    NOC_PORT_WO,    // = 0b01
+    NOC_PORT_RO,    // = 0b10,
+    NOC_PORT_RW     // = 0b11,
+};
+#define IS_PORT_READABLE(port_mode) port_mode & NOC_PORT_RO
+#define IS_PORT_WRITEABLE(port_mode) port_mode & NOC_PORT_WO
+
+#if NOC_MODE == NOC_MODE_BASE
+    #define NOC_N_WDIR (uint32_t)(NOC_DIR_NULL)
+    #define NOC_N_RDIR (uint32_t)(NOC_DIR_NULL)
+#elif NOC_MODE == NOC_MODE_REDUNDANT
+    #define NOC_N_WDIR (uint32_t)(NOC_DIR_TILE1)
+    #define NOC_N_RDIR (uint32_t)(NOC_DIR_NULL)
+#endif
+#define NOC_N_DIR NOC_N_RDIR // more readable than writeable
 
 enum noc_routing_alg_e {
     NOC_ROUTE_X_Y,
@@ -23,7 +47,6 @@ enum noc_routing_alg_e {
 };
 
 /** Link control port type. */
-// TODO: redundancy check from commander (ping to memory router to validate CRC)
 struct noc_link_ctrl_t {
     bool ctrl;                     // whether the port is active
     bool head;                     // whether the packet is the head of the burst

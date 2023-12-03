@@ -3,7 +3,7 @@
 ##### Variables #####
 #####################
 EXE           ?= system
-COMP_MODE     ?= BASE
+COMP_MODE     ?= NOC_MODE_BASE
 DISABLE_TRACE ?=
 KEY_FILE      ?= ../key.bin
 IV_FILE       ?= ../iv.bin

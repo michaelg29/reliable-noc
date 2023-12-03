@@ -1,3 +1,3 @@
 
-COMP_MODE = BASE
+COMP_MODE = NOC_MODE_BASE
 include ../Makefile.rules

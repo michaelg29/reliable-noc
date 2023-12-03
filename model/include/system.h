@@ -7,6 +7,17 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
+// =====================
+// ===== NoC MODES =====
+// =====================
+
+#define NOC_MODE_BASE 0
+#define NOC_MODE_REDUNDANT 1
+
+#ifndef NOC_MODE
+#define NOC_MODE NOC_MODE_BASE
+#endif
+
 // =============================
 // ===== HIGH LEVEL MACROS =====
 // =============================

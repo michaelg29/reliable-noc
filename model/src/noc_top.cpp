@@ -57,21 +57,33 @@ void noc_top::generate_network() {
 
                 // connect adapter and router
                 _adapters[y][x]->router_if(*_routers[y][x]);
-                _routers[y][x]->ports[NOC_DIR_TILE](*_adapters[y][x]);
+#if NOC_MODE == NOC_MODE_BASE
+                _routers[y][x]->rports[NOC_DIR_TILE](*_adapters[y][x]);
+#elif NOC_MODE == NOC_MODE_REDUNDANT
+                _routers[y][x]->rports[NOC_DIR_TILE0](*_adapters[y][x]);
+                _routers[y][x]->rports[NOC_DIR_TILE1](*_adapters[y][x]);
+                _routers[y][x]->rports[NOC_DIR_TILE2](*_adapters[y][x]);
+#endif
             }
             else {
-                _routers[y][x]->ports[NOC_DIR_TILE](dummy_if);
+#if NOC_MODE == NOC_MODE_BASE
+                _routers[y][x]->rports[NOC_DIR_TILE](dummy_if);
+#elif NOC_MODE == NOC_MODE_REDUNDANT
+                _routers[y][x]->rports[NOC_DIR_TILE0](dummy_if);]);
+                _routers[y][x]->rports[NOC_DIR_TILE1](dummy_if);]);
+                _routers[y][x]->rports[NOC_DIR_TILE2](dummy_if);]);
+#endif
             }
 
             // connect router to neighbors
-            if (x < NOC_X_SIZE - 1 && _routers[y][x+1]) _routers[y][x]->ports[NOC_DIR_X_PLUS](*_routers[y][x+1]);
-            else _routers[y][x]->ports[NOC_DIR_X_PLUS](dummy_if);
-            if (x > 0 && _routers[y][x-1]) _routers[y][x]->ports[NOC_DIR_X_MINUS](*_routers[y][x-1]);
-            else _routers[y][x]->ports[NOC_DIR_X_MINUS](dummy_if);
-            if (y < NOC_Y_SIZE - 1 && _routers[y+1][x]) _routers[y][x]->ports[NOC_DIR_Y_PLUS](*_routers[y+1][x]);
-            else _routers[y][x]->ports[NOC_DIR_Y_PLUS](dummy_if);
-            if (y > 0 && _routers[y-1][x]) _routers[y][x]->ports[NOC_DIR_Y_MINUS](*_routers[y-1][x]);
-            else _routers[y][x]->ports[NOC_DIR_Y_MINUS](dummy_if);
+            if (x < NOC_X_SIZE - 1 && _routers[y][x+1]) _routers[y][x]->rports[NOC_DIR_X_PLUS](*_routers[y][x+1]);
+            else _routers[y][x]->rports[NOC_DIR_X_PLUS](dummy_if);
+            if (x > 0 && _routers[y][x-1]) _routers[y][x]->rports[NOC_DIR_X_MINUS](*_routers[y][x-1]);
+            else _routers[y][x]->rports[NOC_DIR_X_MINUS](dummy_if);
+            if (y < NOC_Y_SIZE - 1 && _routers[y+1][x]) _routers[y][x]->rports[NOC_DIR_Y_PLUS](*_routers[y+1][x]);
+            else _routers[y][x]->rports[NOC_DIR_Y_PLUS](dummy_if);
+            if (y > 0 && _routers[y-1][x]) _routers[y][x]->rports[NOC_DIR_Y_MINUS](*_routers[y-1][x]);
+            else _routers[y][x]->rports[NOC_DIR_Y_MINUS](dummy_if);
 
             _routers[y][x]->setup_ctrl();
         }

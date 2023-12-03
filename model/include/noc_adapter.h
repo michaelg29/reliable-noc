@@ -7,6 +7,7 @@
 #ifndef NOC_ADAPTER_H
 #define NOC_ADAPTER_H
 
+// TODO interrupt function.
 /** Interface from the tile to the NoC adapter. */
 class noc_adapter_if : virtual public sc_interface {
 

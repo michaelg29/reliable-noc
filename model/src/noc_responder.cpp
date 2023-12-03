@@ -2,9 +2,10 @@
 #include "systemc.h"
 
 #include "system.h"
+#include "sc_trace.hpp"
 #include "noc_tile.h"
 
-noc_responder::noc_responder(sc_module_name name) : noc_tile(name) {
+noc_responder::noc_responder(sc_module_name name, uint32_t base_addr) : noc_tile(name), _base_addr(base_addr) {
     SC_THREAD(main);
     SC_THREAD(recv_listener);
 
@@ -20,7 +21,7 @@ void noc_responder::main() {
     while (true) {
         if (proc_if->read_packet(out_addr, out_buf)) {
             // write output buffer
-            adapter_if->write_packet(0, out_addr, &out_buf, sizeof(noc_data_t));
+            adapter_if->write_packet(0, out_addr, &out_buf, sizeof(noc_data_t), REDUNDANT_RESPONSE);
         }
 
         if (_last_packet_loaded && proc_if->is_done()) {
@@ -48,6 +49,11 @@ void noc_responder::recv_listener() {
         // receive packet while not busy
         if (adapter_if->read_packet(src_addr, in_addr, *data) && !_last_packet_loaded) {
             LOGF("[%s]: received request containing %016lx at %08x", this->name(), *data, in_addr);
+
+            // capture in logger
+            in_addr += _base_addr;
+            latency_tracker::capture(data, &in_addr);
+            in_addr -= _base_addr;
 
             switch (_state) {
             case NOC_RESPONDER_IDLE:
@@ -89,7 +95,7 @@ void noc_responder::recv_listener() {
                 // latch in acknowledge message
                 _cur_ack.ekey = NOC_CMD_EKEY;
                 _cur_ack.chksum = (uint32_t)CALC_CMD_CHKSUM(_cur_ack);
-                
+
                 proc_if->configure(_cur_cmd.cmd, _cur_cmd.size, src_addr);
 
                 // advance state and pointer

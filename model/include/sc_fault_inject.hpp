@@ -16,9 +16,8 @@ struct fault_injectable_variable_t {
     uint32_t pos_fault_count; // possible fault injection count
 };
 
-class sc_fault_injector;
-
 /** Class to inject faults into registered variables. */
+class sc_fault_injector; // forward declaration for global singleton
 class sc_fault_injector {
 
     public:

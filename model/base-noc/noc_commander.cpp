@@ -3,8 +3,9 @@
 
 #include "systemc.h"
 
-#include "checksum.hpp"
 #include "system.h"
+#include "checksum.hpp"
+#include "sc_trace.hpp"
 #include "noc_tile.h"
 
 noc_commander::noc_commander(sc_module_name name) : noc_tile(name) {
@@ -43,14 +44,14 @@ void noc_commander::transmit_to_responders(noc_data_t *packets, uint32_t n) {
     // determine number of packets
     n = (n / NOC_DSIZE) + ((n % NOC_DSIZE) ? 1 : 0);
 
-    // interleave
+    // interleave requests
     uint32_t noc_responder0_addr = NOC_BASE_ADDR_RESPONDER0;
     uint32_t noc_responder1_addr = NOC_BASE_ADDR_RESPONDER1;
     uint32_t noc_responder2_addr = NOC_BASE_ADDR_RESPONDER2;
     while (n) {
-        adapter_if->write_packet(0, noc_responder0_addr, packets, sizeof(noc_data_t));
-        adapter_if->write_packet(0, noc_responder1_addr, packets, sizeof(noc_data_t));
-        adapter_if->write_packet(0, noc_responder2_addr, packets, sizeof(noc_data_t));
+        adapter_if->write_packet(0, noc_responder0_addr, packets, sizeof(noc_data_t), REDUNDANT_COMMAND);
+        adapter_if->write_packet(0, noc_responder1_addr, packets, sizeof(noc_data_t), REDUNDANT_COMMAND);
+        adapter_if->write_packet(0, noc_responder2_addr, packets, sizeof(noc_data_t), REDUNDANT_COMMAND);
 
         // increment counters
         n--;
@@ -90,14 +91,15 @@ void noc_commander::recv_listener() {
 
     // keep track of redundant communications
     int32_t redundant_src_idx;
-    uint32_t checkpoint_size = 4; // checkpoints every 4 packets (32B)
+    uint32_t checkpoint_size_pkts = 4; // checkpoints every 4 packets (32B)
+    uint32_t checkpoint_size_bytes = checkpoint_size_pkts * NOC_DSIZE;
     tmr_packet_status_e status;
-    tmr_state_collection<noc_data_t> states(checkpoint_size, MAX_OUT_SIZE / sizeof(noc_data_t) / checkpoint_size);
+    tmr_state_collection<noc_data_t> states(checkpoint_size_pkts, MAX_OUT_SIZE / checkpoint_size_bytes);
 
     // buffers
     uint32_t tot_cursor = 0;
-    uint8_t rsp_buf[NOC_DSIZE * checkpoint_size];
-    memset(rsp_buf, 0, NOC_DSIZE * checkpoint_size);
+    uint8_t rsp_buf[checkpoint_size_bytes];
+    memset(rsp_buf, 0, checkpoint_size_bytes);
 
     // comparison counters
     uint32_t n_bytes_cmp = 0;
@@ -119,9 +121,16 @@ void noc_commander::recv_listener() {
             // update CRC
             status = states.update(redundant_src_idx, data, (noc_data_t*)rsp_buf);
             if (status == TMR_STATUS_COMMIT) {
+                // capture in logger
+                for (uint32_t addr = tot_cursor + NOC_BASE_ADDR_COMMANDER, max_addr = addr + checkpoint_size_bytes, i = 0;
+                     addr < max_addr;
+                     addr += NOC_DSIZE, i++) {
+                    latency_tracker::capture((noc_data_t*)rsp_buf + i, &addr);
+                }
+
                 LOGF("Majority reached for byte 0x%x\n", tot_cursor);
                 printf("Error count goes from %d to ", n_err_bytes);
-                for (int i = 0, max_i = NOC_DSIZE * checkpoint_size; i < max_i; ++i, tot_cursor++) {
+                for (int i = 0, max_i = checkpoint_size_bytes; i < max_i; ++i, tot_cursor++) {
                     if (rsp_buf[i] != _exp_buf[tot_cursor]) {
                         n_err_bytes++;
                     }
@@ -138,7 +147,7 @@ void noc_commander::recv_listener() {
             else if (status == TMR_STATUS_INVALID) {
                 LOGF("Invalid vote, no majority reached at byte 0x%x\n", tot_cursor);
 
-                int max_i = tot_cursor + checkpoint_size * NOC_DSIZE;
+                int max_i = tot_cursor + checkpoint_size_bytes;
                 printf("Expected: ");
                 for (int i = tot_cursor; i < max_i; ++i) printf("%s%02x", !(i & 0x7) ? " " : "", _exp_buf[i]);
                 printf("\n");

@@ -22,7 +22,7 @@ void noc_adapter::read_port(noc_dir_e dir, noc_data_t& data, noc_link_ctrl_t& li
 }
 
 /** noc_adapter_if.read_packet */
-bool noc_adapter::read_packet(uint32_t& src_addr, uint32_t& rel_addr, noc_data_t& data) {
+bool noc_adapter::_read_packet(uint32_t& src_addr, uint32_t& rel_addr, noc_data_t& data) {
     // read from the router
     router_if->read_port(NOC_DIR_TILE, _r_data, _r_link_ctrl);
     POSEDGE();
@@ -41,7 +41,7 @@ bool noc_adapter::read_packet(uint32_t& src_addr, uint32_t& rel_addr, noc_data_t
 }
 
 /** noc_adapter_if.write_packet */
-bool noc_adapter::write_packet(uint32_t src, uint32_t addr, noc_data_t *data, uint32_t n) {
+bool noc_adapter::_write_packet(uint32_t src, uint32_t addr, noc_data_t *data, uint32_t n) {
     // activate packet
     _w_link_ctrl.ctrl = true;
     _w_link_ctrl.head = true;

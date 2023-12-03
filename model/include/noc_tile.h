@@ -113,9 +113,11 @@ class noc_responder : public noc_tile {
 
         /** Constructor. */
         SC_HAS_PROCESS(noc_responder);
-        noc_responder(sc_module_name name);
+        noc_responder(sc_module_name name, uint32_t base_addr);
 
     private:
+
+        uint32_t _base_addr;
 
         /** Current state. */
         noc_cmd_t _cur_cmd;

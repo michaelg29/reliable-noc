@@ -8,8 +8,10 @@
 #include <iostream>
 #include <string>
 
+// Statistics collecting classes
 sc_fault_injector sc_fault_injector::injector;
 sc_tracer sc_tracer::tracer;
+latency_tracker latency_tracker::tracker;
 
 int sc_main(int argc, char* argv[]) {
     if (!parse_cmd_line(argc, argv)) {
@@ -40,6 +42,7 @@ int sc_main(int argc, char* argv[]) {
     std::cout << "Simulated for " << duration << std::endl;
 
     sc_tracer::close();
+    latency_tracker::print_report();
 
     return 0;
 }

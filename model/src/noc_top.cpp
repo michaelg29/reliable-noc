@@ -18,19 +18,19 @@ void noc_top::generate_network() {
 
     // create commander tile
     _tiles[NOC_Y_COMMANDER][NOC_X_COMMANDER] = new noc_commander("commander");
-    
+
     // create responder0 tile
-    _tiles[NOC_Y_RESPONDER0][NOC_X_RESPONDER0] = new noc_responder("responder0");
+    _tiles[NOC_Y_RESPONDER0][NOC_X_RESPONDER0] = new noc_responder("responder0", NOC_BASE_ADDR_RESPONDER0);
     _apps[0] = new application("main_application0");
     ((noc_responder*)_tiles[NOC_Y_RESPONDER0][NOC_X_RESPONDER0])->proc_if(*_apps[0]);
-    
+
     // create responder1 tile
-    _tiles[NOC_Y_RESPONDER1][NOC_X_RESPONDER1] = new noc_responder("responder1");
+    _tiles[NOC_Y_RESPONDER1][NOC_X_RESPONDER1] = new noc_responder("responder1", NOC_BASE_ADDR_RESPONDER1);
     _apps[1] = new application("main_application1");
     ((noc_responder*)_tiles[NOC_Y_RESPONDER1][NOC_X_RESPONDER1])->proc_if(*_apps[1]);
-    
+
     // create responder2 tile
-    _tiles[NOC_Y_RESPONDER2][NOC_X_RESPONDER2] = new noc_responder("responder2");
+    _tiles[NOC_Y_RESPONDER2][NOC_X_RESPONDER2] = new noc_responder("responder2", NOC_BASE_ADDR_RESPONDER2);
     _apps[2] = new application("main_application2");
     ((noc_responder*)_tiles[NOC_Y_RESPONDER2][NOC_X_RESPONDER2])->proc_if(*_apps[2]);
 

@@ -301,8 +301,6 @@ application::application(sc_module_name name) : sc_module(name) {
     _out_fifo_head = 0;
     _out_fifo_tail = 0;
 
-    sc_fault_injector::set_injectable_ptr(_iv.string, AES_BLOCK_LEN, 0.01f, (char*)this->name());
-
     SC_THREAD(main);
 }
 
@@ -313,6 +311,8 @@ void application::configure(uint32_t command, uint32_t payload_size, uint32_t ou
     _cur_ptr = (noc_data_t*)_buf;
 
     LOGF("Configured to receive payload of size %d and write to %08x", payload_size, out_addr);
+
+    sc_fault_injector::set_injectable_ptr(_iv.string, AES_BLOCK_LEN, 0.001f, (char*)this->name());
 }
 
 void application::write_packet(uint32_t rel_addr, noc_data_t buffer) {

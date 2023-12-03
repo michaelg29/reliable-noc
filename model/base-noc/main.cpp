@@ -1,4 +1,6 @@
 
+#define NOC_MODE NOC_MODE_BASE
+
 #include "system.h"
 #include "sc_fault_inject.hpp"
 #include "sc_trace.hpp"

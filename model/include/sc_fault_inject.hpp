@@ -105,7 +105,6 @@ class sc_fault_injector {
                         // probability of random fault
                         rand_val = (uint32_t)rand();
                         if (rand_val < var.rand_threshold) {
-                            std::cout << var.name << " possible fault" << std::endl;
                             var.pos_fault_count++;
 
                             // determine which bit to upset
@@ -130,7 +129,7 @@ class sc_fault_injector {
                         ptr++;
                     }
 
-                    std::cout << var.name << " has a fault count of " << var.fault_count << " and a possible fault count of " << var.pos_fault_count << std::endl;
+                    //std::cout << var.name << " has a fault count of " << var.fault_count << " and a possible fault count of " << var.pos_fault_count << std::endl;
                 }
             }
 

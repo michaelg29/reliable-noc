@@ -1,30 +1,50 @@
 
+#define NOC_MODE NOC_MODE_REDUNDANT
+
 #include "system.h"
+#include "sc_fault_inject.hpp"
+#include "sc_trace.hpp"
+#include "noc_top.h"
 
 #include "systemc.h"
 #include <iostream>
 #include <string>
 
+// Statistics collecting classes
+sc_fault_injector sc_fault_injector::injector;
+sc_tracer sc_tracer::tracer;
+latency_tracker latency_tracker::tracker;
+
 int sc_main(int argc, char* argv[]) {
-    if (!parseCmdLine(argc, argv)) {
+    if (!parse_cmd_line(argc, argv)) {
         return 1;
     }
 
     // initial state
-    std::cout << "Hello, world!\n" << std::endl;
+    std::cout << "Initial state:" << std::endl;
 
-    // =====================================
-    // ==== CREATE AND CONNECT MODULES =====
-    // =====================================
+    // ======================================
+    // ===== CREATE AND CONNECT MODULES =====
+    // ======================================
 
-    // =============================
-    // ==== RUN THE SIMULATION =====
-    // =============================
-    sc_time startTime = sc_time_stamp();
-    sc_start();
-    sc_time stopTime = sc_time_stamp();
+    noc_top top;
+    top.generate_network();
 
-    cout << "Simulated for " << (stopTime - startTime) << endl;
+    // ==============================
+    // ===== RUN THE SIMULATION =====
+    // ==============================
+
+    std::cout << "Starting simulation..." << std::endl;
+    sc_time duration = sc_fault_injector::simulate();
+
+    // ===================
+    // ===== CLEANUP =====
+    // ===================
+
+    std::cout << "Simulated for " << duration << std::endl;
+
+    sc_tracer::close();
+    latency_tracker::print_report();
 
     return 0;
 }

@@ -4,7 +4,7 @@
 #include "system.h"
 #include "checksum.h"
 #include "application.h"
-#include "noc_adapter.h"
+#include "noc_adapter_if.h"
 
 #ifndef NOC_TILE_H
 #define NOC_TILE_H

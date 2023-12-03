@@ -4,10 +4,9 @@
 #include "sc_trace.hpp"
 #include "noc_if.h"
 
-#ifndef NOC_ADAPTER_H
-#define NOC_ADAPTER_H
+#ifndef NOC_ADAPTER_IF_H
+#define NOC_ADAPTER_IF_H
 
-// TODO interrupt function.
 /** Interface from the tile to the NoC adapter. */
 class noc_adapter_if : virtual public sc_interface {
 
@@ -44,37 +43,4 @@ class noc_adapter_if : virtual public sc_interface {
 
 };
 
-/** NoC adapter module. */
-class noc_adapter : public sc_module, public noc_if, public noc_adapter_if {
-
-    public:
-
-        /** Corresponding router. */
-        sc_port<noc_if> router_if;
-
-        noc_adapter(sc_module_name name, uint32_t x, uint32_t y);
-
-        /** noc_if functions. */
-        void read_port(noc_dir_e dir, noc_data_t& data, noc_link_ctrl_t& link_ctrl);
-
-    private:
-
-        /** Configuration. */
-        uint32_t _x;
-        uint32_t _y;
-
-        /** Incoming packets. */
-        noc_data_t _r_data;
-        noc_link_ctrl_t _r_link_ctrl;
-
-        /** Outgoing packets. */
-        noc_data_t _w_data;
-        noc_link_ctrl_t _w_link_ctrl;
-
-        /** noc_adapter_if functions. */
-        bool _read_packet(uint32_t& src_addr, uint32_t& addr, noc_data_t& data);
-        bool _write_packet(uint32_t src, uint32_t addr, noc_data_t *data, uint32_t n);
-
-};
-
-#endif // NOC_ADAPTER_H
+#endif // NOC_ADAPTER_IF_H

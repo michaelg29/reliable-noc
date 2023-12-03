@@ -1,6 +1,9 @@
 
 #include "systemc.h"
 
+#ifndef NOC_TOP_H
+#define NOC_TOP_H
+
 #include "system.h"
 #include "noc_tile.h"
 #include "noc_adapter.h"
@@ -26,3 +29,5 @@ class noc_top {
         noc_router *_routers[NOC_Y_SIZE][NOC_X_SIZE];
 
 };
+
+#endif

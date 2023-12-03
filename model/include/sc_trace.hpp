@@ -149,8 +149,6 @@ class latency_tracker {
 
                 // remove from map
                 tracker._tracked_data.erase(it);
-
-                std::cout << "Captured packet for class " << entry.data_class << " at " << sc_time_stamp() << std::endl;
             }
         }
 

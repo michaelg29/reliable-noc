@@ -377,7 +377,7 @@ void application::main() {
         // read input data
         if (_in_fifo_tail != _in_fifo_head) {
             // encrypt dequeued packet from FIFO
-            aes_encrypt_block((aes_block_t*)(_in_fifo +(_in_fifo_head & APPL_FIFO_PTR_MASK)), _in_fifo_n[_in_fifo_head & APPL_FIFO_PTR_MASK],
+            aes_encrypt_block((aes_block_t*)(_in_fifo + (_in_fifo_head & APPL_FIFO_PTR_MASK)), _in_fifo_n[_in_fifo_head & APPL_FIFO_PTR_MASK],
                               _subkeys,
                               &_iv,
                               &_tmp);

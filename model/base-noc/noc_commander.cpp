@@ -11,6 +11,7 @@
 noc_commander::noc_commander(sc_module_name name) : noc_tile(name) {
     SC_THREAD(main);
     SC_THREAD(recv_listener);
+    SC_THREAD(recv_processor);
 
     // read buffers
     _write_buf_size = read_input_files(_write_buf);
@@ -38,6 +39,8 @@ noc_commander::noc_commander(sc_module_name name) : noc_tile(name) {
 
     // initial state
     _state = NOC_COMMANDER_IDLE;
+    _in_fifo_head = 0;
+    _in_fifo_tail = 0;
 }
 
 void noc_commander::transmit_to_responders(noc_data_t *packets, uint32_t n) {
@@ -89,12 +92,31 @@ void noc_commander::recv_listener() {
     uint32_t rel_addr;
     noc_data_t data;
 
+    while (true) {
+        // receive packet
+        if (adapter_if->read_packet(src_addr, rel_addr, data)) {
+            LOGF("[%s]: enqueuing request containing %016lx to %08x from %08x", this->name(), data, rel_addr, src_addr);
+
+            // enqueue in FIFO
+            _in_fifo_src_addr[_in_fifo_tail & RESPONSE_FIFO_PTR_MASK] = src_addr;
+            _in_fifo_rel_addr[_in_fifo_tail & RESPONSE_FIFO_PTR_MASK] = rel_addr;
+            _in_fifo_data[_in_fifo_tail & RESPONSE_FIFO_PTR_MASK] = data;
+            _in_fifo_tail++;
+        }
+    }
+}
+
+void noc_commander::recv_processor() {
+    // NoC packets
+    uint32_t src_addr;
+    uint32_t rel_addr;
+    noc_data_t data;
+
     // keep track of redundant communications
     int32_t redundant_src_idx;
-    uint32_t checkpoint_size_pkts = 4; // checkpoints every 4 packets (32B)
-    uint32_t checkpoint_size_bytes = checkpoint_size_pkts * NOC_DSIZE;
+    uint32_t checkpoint_size_bytes = CHECKPOINT_SIZE_PKTS * NOC_DSIZE;
     tmr_packet_status_e status;
-    tmr_state_collection<noc_data_t> states(checkpoint_size_pkts, MAX_OUT_SIZE / checkpoint_size_bytes);
+    tmr_state_collection<noc_data_t> states(CHECKPOINT_SIZE_PKTS, MAX_OUT_SIZE / checkpoint_size_bytes);
 
     // buffers
     uint32_t tot_cursor = 0;
@@ -106,8 +128,14 @@ void noc_commander::recv_listener() {
     uint32_t n_err_bytes = 0;
 
     while (true) {
-        // receive packet
-        if (adapter_if->read_packet(src_addr, rel_addr, data)) {
+        if (_in_fifo_tail != _in_fifo_head) {
+            // dequeue from FIFO
+            src_addr = _in_fifo_src_addr[_in_fifo_head & RESPONSE_FIFO_PTR_MASK];
+            rel_addr = _in_fifo_rel_addr[_in_fifo_head & RESPONSE_FIFO_PTR_MASK];
+            data = _in_fifo_data[_in_fifo_head & RESPONSE_FIFO_PTR_MASK];
+            _in_fifo_head++;
+            LOGF("[%s]: dequeuing request containing %016lx to %08x from application %d", this->name(), data, rel_addr, redundant_src_idx);
+
             // determine source
             switch (src_addr & NOC_ADDR_XY_MASK) {
             case NOC_BASE_ADDR_RESPONDER0: redundant_src_idx = 0; break;
@@ -115,11 +143,11 @@ void noc_commander::recv_listener() {
             case NOC_BASE_ADDR_RESPONDER2: redundant_src_idx = 2; break;
             default: redundant_src_idx = -1; break;
             };
-
-            LOGF("[%s]: received request containing %016lx to %08x from application %d", this->name(), data, rel_addr, redundant_src_idx);
+            POSEDGE();
 
             // update CRC
             status = states.update(redundant_src_idx, data, (noc_data_t*)rsp_buf);
+            POSEDGE();
             if (status == TMR_STATUS_COMMIT) {
                 // capture in logger
                 for (uint32_t addr = tot_cursor + NOC_BASE_ADDR_COMMANDER, max_addr = addr + checkpoint_size_bytes, i = 0;
@@ -128,15 +156,13 @@ void noc_commander::recv_listener() {
                     latency_tracker::capture((noc_data_t*)rsp_buf + i, &addr);
                 }
 
-                LOGF("Majority reached for byte 0x%x\n", tot_cursor);
-                printf("Error count goes from %d to ", n_err_bytes);
                 for (int i = 0, max_i = checkpoint_size_bytes; i < max_i; ++i, tot_cursor++) {
                     if (rsp_buf[i] != _exp_buf[tot_cursor]) {
                         n_err_bytes++;
                     }
                     n_bytes_cmp++;
                 }
-                printf("%d, compared a total of %d bytes\n", n_err_bytes, n_bytes_cmp);
+                LOGF("[%s]: Majority reached for byte 0x%x, error count %d\n", this->name(), tot_cursor, n_err_bytes);
 
                 if (tot_cursor >= _exp_buf_size) {
                     LOG("Setting to IDLE");
@@ -154,6 +180,8 @@ void noc_commander::recv_listener() {
                 break;
             }
         }
+
+        POSEDGE();
     }
 
     // compare received and expected buffer

@@ -72,6 +72,11 @@ class noc_tile : public sc_module {
 
 };
 
+#define CHECKPOINT_SIZE_PKTS 4 // checkpoints every 4 packets (32B)
+#define RESPONSE_FIFO_BUF_N_BITS 6
+#define RESPONSE_FIFO_BUF_SIZE (1 << RESPONSE_FIFO_BUF_N_BITS)
+#define RESPONSE_FIFO_PTR_MASK (RESPONSE_FIFO_BUF_SIZE - 1)
+
 /** Command issuer. */
 class noc_commander : public noc_tile {
 
@@ -95,12 +100,20 @@ class noc_commander : public noc_tile {
         uint32_t _write_buf_size;
         uint32_t _exp_buf_size;
 
+        /** Input FIFO from the adapter. */
+        uint32_t _in_fifo_src_addr[RESPONSE_FIFO_BUF_SIZE];
+        uint32_t _in_fifo_rel_addr[RESPONSE_FIFO_BUF_SIZE];
+        noc_data_t _in_fifo_data[RESPONSE_FIFO_BUF_SIZE];
+        uint32_t _in_fifo_head;
+        uint32_t _in_fifo_tail;
+
         /** Transmit a packet to the redundant copies. */
         void transmit_to_responders(noc_data_t *packets, uint32_t n_bytes);
 
         /** Main thread functions. */
         void main();
         void recv_listener();
+        void recv_processor();
 
 };
 

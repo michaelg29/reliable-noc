@@ -61,7 +61,7 @@ class redundancy_state {
                 return false;
             }
 
-            crc = _crc[checkpoint];
+            crc = _crc[checkpoint-1]; // CRC at end of previous string
             return true;
         }
 
@@ -187,38 +187,38 @@ class tmr_state_collection {
 };
 
 /** Sample usage of the class. */
-void tmr_state_collection_demo() {
-    uint32_t n_checkpoints = 4;
-    uint32_t checkpoint_size = 2; // in packets
-    uint32_t n_packets = n_checkpoints * checkpoint_size;
-    tmr_state_collection<uint64_t> states(checkpoint_size, n_checkpoints);
+// void tmr_state_collection_demo() {
+    // uint32_t n_checkpoints = 4;
+    // uint32_t checkpoint_size = 2; // in packets
+    // uint32_t n_packets = n_checkpoints * checkpoint_size;
+    // tmr_state_collection<uint64_t> states(checkpoint_size, n_checkpoints);
 
-    // input streams
-    uint64_t stream[3][n_packets] = {
-        {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
-        {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1},
-        {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2}
-    };
+    // // input streams
+    // uint64_t stream[3][n_packets] = {
+        // {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
+        // {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1},
+        // {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2}
+    // };
 
-    uint64_t out_packets[checkpoint_size];
-    tmr_packet_status_e status;
-    for (int i = 0; i < n_packets; ++i) {
-        for (int m = 0; m < 3; ++m) {
-            status = states.update(m, stream[m][i], out_packets);
-            printf("mod %d: %016lx => status %d\n", m, stream[m][i], status);
-            if (status == TMR_STATUS_COMMIT) {
-                printf("Confirm store of {");
-                for (int p = 0; p < checkpoint_size; p++) {
-                    printf("%016lx ", out_packets[p]);
-                }
-                printf("} for packet %d\n", i);
-            }
-            else if (status == TMR_STATUS_INVALID) {
-                printf("No majority on packet %d\n", i);
-            }
-        }
-        printf("\n");
-    }
-}
+    // uint64_t out_packets[checkpoint_size];
+    // tmr_packet_status_e status;
+    // for (int i = 0; i < n_packets; ++i) {
+        // for (int m = 0; m < 3; ++m) {
+            // status = states.update(m, stream[m][i], out_packets);
+            // printf("mod %d: %016lx => status %d\n", m, stream[m][i], status);
+            // if (status == TMR_STATUS_COMMIT) {
+                // printf("Confirm store of {");
+                // for (int p = 0; p < checkpoint_size; p++) {
+                    // printf("%016lx ", out_packets[p]);
+                // }
+                // printf("} for packet %d\n", i);
+            // }
+            // else if (status == TMR_STATUS_INVALID) {
+                // printf("No majority on packet %d\n", i);
+            // }
+        // }
+        // printf("\n");
+    // }
+// }
 
 #endif // CHECKSUM_HPP

@@ -34,12 +34,10 @@ enum noc_port_mode_e {
 
 #if NOC_MODE == NOC_MODE_BASE
     #define NOC_N_WDIR (uint32_t)(NOC_DIR_NULL)
-    #define NOC_N_RDIR (uint32_t)(NOC_DIR_NULL)
 #elif NOC_MODE == NOC_MODE_REDUNDANT
     #define NOC_N_WDIR (uint32_t)(NOC_DIR_TILE1)
-    #define NOC_N_RDIR (uint32_t)(NOC_DIR_NULL)
 #endif
-#define NOC_N_DIR NOC_N_RDIR // more readable than writeable
+#define NOC_N_RDIR (uint32_t)(NOC_DIR_NULL)
 
 enum noc_routing_alg_e {
     NOC_ROUTE_X_Y,

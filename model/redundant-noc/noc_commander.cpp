@@ -4,7 +4,6 @@
 #include "systemc.h"
 
 #include "system.h"
-#include "checksum.hpp"
 #include "sc_trace.hpp"
 #include "noc_tile.h"
 
@@ -38,6 +37,8 @@ noc_commander::noc_commander(sc_module_name name) : noc_tile(name) {
 
     // initial state
     _state = NOC_COMMANDER_IDLE;
+    _in_fifo_head = 0;
+    _in_fifo_tail = 0;
 }
 
 void noc_commander::transmit_to_responders(noc_data_t *packets, uint32_t n) {
@@ -46,20 +47,16 @@ void noc_commander::transmit_to_responders(noc_data_t *packets, uint32_t n) {
 
     // interleave requests
     uint32_t noc_responder0_addr = NOC_BASE_ADDR_RESPONDER0;
-    uint32_t noc_responder1_addr = NOC_BASE_ADDR_RESPONDER1;
-    uint32_t noc_responder2_addr = NOC_BASE_ADDR_RESPONDER2;
     while (n) {
-        adapter_if->write_packet(0, noc_responder0_addr, packets, sizeof(noc_data_t), REDUNDANT_COMMAND);
-        adapter_if->write_packet(0, noc_responder1_addr, packets, sizeof(noc_data_t), REDUNDANT_COMMAND);
-        adapter_if->write_packet(0, noc_responder2_addr, packets, sizeof(noc_data_t), REDUNDANT_COMMAND);
+        adapter_if->write_packet(0, noc_responder0_addr, packets, NOC_DSIZE, REDUNDANT_COMMAND);
 
         // increment counters
         n--;
         noc_responder0_addr += NOC_DSIZE;
-        noc_responder1_addr += NOC_DSIZE;
-        noc_responder2_addr += NOC_DSIZE;
         packets++;
     }
+    
+    //adapter_if->write_packet(0, NOC_BASE_ADDR_RESPONDER0, packets, n, REDUNDANT_COMMAND);
 }
 
 void noc_commander::main() {
@@ -88,19 +85,7 @@ void noc_commander::recv_listener() {
     uint32_t src_addr;
     uint32_t rel_addr;
     noc_data_t data;
-
-    // keep track of redundant communications
-    int32_t redundant_src_idx;
-    uint32_t checkpoint_size_pkts = 4; // checkpoints every 4 packets (32B)
-    uint32_t checkpoint_size_bytes = checkpoint_size_pkts * NOC_DSIZE;
-    tmr_packet_status_e status;
-    tmr_state_collection<noc_data_t> states(checkpoint_size_pkts, MAX_OUT_SIZE / checkpoint_size_bytes);
-
-    // buffers
-    uint32_t tot_cursor = 0;
-    uint8_t rsp_buf[checkpoint_size_bytes];
-    memset(rsp_buf, 0, checkpoint_size_bytes);
-
+    
     // comparison counters
     uint32_t n_bytes_cmp = 0;
     uint32_t n_err_bytes = 0;
@@ -108,57 +93,36 @@ void noc_commander::recv_listener() {
     while (true) {
         // receive packet
         if (adapter_if->read_packet(src_addr, rel_addr, data)) {
-            // determine source
-            switch (src_addr & NOC_ADDR_XY_MASK) {
-            case NOC_BASE_ADDR_RESPONDER0: redundant_src_idx = 0; break;
-            case NOC_BASE_ADDR_RESPONDER1: redundant_src_idx = 1; break;
-            case NOC_BASE_ADDR_RESPONDER2: redundant_src_idx = 2; break;
-            default: redundant_src_idx = -1; break;
-            };
-
-            LOGF("[%s]: received request containing %016lx to %08x from application %d", this->name(), data, rel_addr, redundant_src_idx);
-
-            // update CRC
-            status = states.update(redundant_src_idx, data, (noc_data_t*)rsp_buf);
-            if (status == TMR_STATUS_COMMIT) {
-                // capture in logger
-                for (uint32_t addr = tot_cursor + NOC_BASE_ADDR_COMMANDER, max_addr = addr + checkpoint_size_bytes, i = 0;
-                     addr < max_addr;
-                     addr += NOC_DSIZE, i++) {
-                    latency_tracker::capture((noc_data_t*)rsp_buf + i, &addr);
-                }
-
-                LOGF("Majority reached for byte 0x%x\n", tot_cursor);
-                printf("Error count goes from %d to ", n_err_bytes);
-                for (int i = 0, max_i = checkpoint_size_bytes; i < max_i; ++i, tot_cursor++) {
-                    if (rsp_buf[i] != _exp_buf[tot_cursor]) {
-                        n_err_bytes++;
-                    }
-                    n_bytes_cmp++;
-                }
-                printf("%d, compared a total of %d bytes\n", n_err_bytes, n_bytes_cmp);
-
-                if (tot_cursor >= _exp_buf_size) {
-                    LOG("Setting to IDLE");
-                    _state == NOC_COMMANDER_IDLE;
-                    break;
+            // capture in logger
+            LOGF("[%s]: Received request containing %016lx to %08x from %08x", this->name(), data, rel_addr, src_addr);
+            rel_addr += NOC_BASE_ADDR_COMMANDER;
+            latency_tracker::capture(&data, &rel_addr);
+            rel_addr -= NOC_BASE_ADDR_COMMANDER;
+            
+            // compare bytes
+            for (int i = 0; i < NOC_DSIZE;
+                 ++i, data >>= 8, n_bytes_cmp++) {
+                if ((uint8_t)data != _exp_buf[n_bytes_cmp]) {
+                    printf("Error in byte %08x, expected %02x, got %02x\n", n_bytes_cmp, _exp_buf[n_bytes_cmp], (uint8_t)data);
+                    n_err_bytes++;
                 }
             }
-            else if (status == TMR_STATUS_INVALID) {
-                LOGF("Invalid vote, no majority reached at byte 0x%x\n", tot_cursor);
-
-                int max_i = tot_cursor + checkpoint_size_bytes;
-                printf("Expected: ");
-                for (int i = tot_cursor; i < max_i; ++i) printf("%s%02x", !(i & 0x7) ? " " : "", _exp_buf[i]);
-                printf("\n");
+            
+            if (n_bytes_cmp >= _exp_buf_size) {
+                LOG("Setting to IDLE");
+                _state == NOC_COMMANDER_IDLE;
                 break;
             }
         }
     }
-
+    
     // compare received and expected buffer
     LOG("Completed simulation, checking output...");
     printf("Final report: %d bytes compared, %d errors\n", n_bytes_cmp, n_err_bytes);
 
     sc_stop();
+}
+
+void noc_commander::recv_processor() {
+    
 }

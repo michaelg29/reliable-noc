@@ -52,7 +52,7 @@ uint8_t galoisMul(uint8_t g1, uint8_t g2);
 // ===== APPLICATION CLASS =====
 // =============================
 
-#define APPL_FIFO_BUF_N_BITS 3
+#define APPL_FIFO_BUF_N_BITS 6
 #define APPL_FIFO_BUF_SIZE (1 << APPL_FIFO_BUF_N_BITS)
 #define APPL_FIFO_PTR_MASK (APPL_FIFO_BUF_SIZE - 1)
 

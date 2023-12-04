@@ -310,7 +310,7 @@ void application::configure(uint32_t command, uint32_t payload_size, uint32_t ou
     _out_addr = out_addr;
     _cur_ptr = (noc_data_t*)_buf;
 
-    LOGF("Configured to receive payload of size %d and write to %08x", payload_size, out_addr);
+    LOGF("[%s]: Configured to receive payload of size %d and write to %08x", this->name(), payload_size, out_addr);
 
     sc_fault_injector::set_injectable_ptr(_iv.string, AES_BLOCK_LEN, 0.001f, (char*)this->name());
 }
@@ -359,6 +359,8 @@ bool application::read_packet(uint32_t& out_addr, noc_data_t& out_buffer) {
         out_addr = _out_addr;
         out_buffer = _out_fifo[_out_fifo_head & APPL_FIFO_PTR_MASK];
         _out_fifo_head++;
+        
+        LOGF("[%s]: Writing %016lx to %08x", this->name(), out_buffer, out_addr);
 
         _out_addr += sizeof(noc_data_t);
         return true;

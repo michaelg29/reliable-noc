@@ -101,10 +101,8 @@ class noc_router : public sc_module, public noc_if {
 
     public:
 
-        /** Directional ports and controllers. */
+        /** Directional ports. */
         sc_port<noc_if> rports[NOC_N_RDIR];
-        noc_router_rctrl rdir_ctrls[NOC_N_RDIR];
-        noc_router_wctrl wdir_ctrls[NOC_N_WDIR];
 
         /** Constructor. */
         SC_HAS_PROCESS(noc_router);
@@ -117,6 +115,10 @@ class noc_router : public sc_module, public noc_if {
         void read_port(noc_dir_e dir, noc_data_t& data, noc_link_ctrl_t& link_ctrl);
 
     private:
+    
+        /** Directional controllers. */
+        noc_router_rctrl _rdir_ctrls[NOC_N_RDIR];
+        noc_router_wctrl _wdir_ctrls[NOC_N_WDIR];
 
         /** Configuration. */
         uint32_t _x;

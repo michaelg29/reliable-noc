@@ -41,7 +41,8 @@ void noc_top::generate_network() {
                 _adapters[y][x] = new noc_adapter(("adapter_" + std::to_string(x) + std::to_string(y)).c_str(), x, y);
             }
 
-            _routers[y][x] = new noc_router(("router_" + std::to_string(x) + std::to_string(y)).c_str(), x, y);
+            std::string name = "router_" + std::to_string(x) + std::to_string(y);
+            _routers[y][x] = new noc_router(name.c_str(), x, y);
         }
     }
 
@@ -57,22 +58,10 @@ void noc_top::generate_network() {
 
                 // connect adapter and router
                 _adapters[y][x]->router_if(*_routers[y][x]);
-#if NOC_MODE == NOC_MODE_BASE
                 _routers[y][x]->rports[NOC_DIR_TILE](*_adapters[y][x]);
-#elif NOC_MODE == NOC_MODE_REDUNDANT
-                _routers[y][x]->rports[NOC_DIR_TILE0](*_adapters[y][x]);
-                _routers[y][x]->rports[NOC_DIR_TILE1](*_adapters[y][x]);
-                _routers[y][x]->rports[NOC_DIR_TILE2](*_adapters[y][x]);
-#endif
             }
             else {
-#if NOC_MODE == NOC_MODE_BASE
                 _routers[y][x]->rports[NOC_DIR_TILE](dummy_if);
-#elif NOC_MODE == NOC_MODE_REDUNDANT
-                _routers[y][x]->rports[NOC_DIR_TILE0](dummy_if);]);
-                _routers[y][x]->rports[NOC_DIR_TILE1](dummy_if);]);
-                _routers[y][x]->rports[NOC_DIR_TILE2](dummy_if);]);
-#endif
             }
 
             // connect router to neighbors

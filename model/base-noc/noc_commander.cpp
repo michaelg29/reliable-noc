@@ -52,9 +52,9 @@ void noc_commander::transmit_to_responders(noc_data_t *packets, uint32_t n) {
     uint32_t noc_responder1_addr = NOC_BASE_ADDR_RESPONDER1;
     uint32_t noc_responder2_addr = NOC_BASE_ADDR_RESPONDER2;
     while (n) {
-        adapter_if->write_packet(0, noc_responder0_addr, packets, sizeof(noc_data_t), REDUNDANT_COMMAND);
-        adapter_if->write_packet(0, noc_responder1_addr, packets, sizeof(noc_data_t), REDUNDANT_COMMAND);
-        adapter_if->write_packet(0, noc_responder2_addr, packets, sizeof(noc_data_t), REDUNDANT_COMMAND);
+        adapter_if->write_packet(0, noc_responder0_addr, packets, NOC_DSIZE, REDUNDANT_COMMAND);
+        adapter_if->write_packet(0, noc_responder1_addr, packets, NOC_DSIZE, REDUNDANT_COMMAND);
+        adapter_if->write_packet(0, noc_responder2_addr, packets, NOC_DSIZE, REDUNDANT_COMMAND);
 
         // increment counters
         n--;

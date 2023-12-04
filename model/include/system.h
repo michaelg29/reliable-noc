@@ -98,6 +98,11 @@ struct noc_addr_t {
 #define NOC_GET_Y_ADDR(addr)   ((addr & NOC_ADDR_Y_MASK) >> 28)
 #define NOC_RECOVER_RAW_ADDR(addr_struct) ((addr_struct.rel & NOC_ADDR_REL_MASK) | ((addr_struct.x << 24) & NOC_ADDR_X_MASK) | ((addr_struct.y << 28) & NOC_ADDR_Y_MASK))
 
+#define CHECKPOINT_SIZE_PKTS 4 // checkpoints every 4 packets (32B)
+#define RESPONSE_FIFO_BUF_N_BITS 6
+#define RESPONSE_FIFO_BUF_SIZE (1 << RESPONSE_FIFO_BUF_N_BITS)
+#define RESPONSE_FIFO_PTR_MASK (RESPONSE_FIFO_BUF_SIZE - 1)
+
 // ============================
 // ===== HELPER FUNCTIONS =====
 // ============================

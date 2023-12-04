@@ -72,11 +72,6 @@ class noc_tile : public sc_module {
 
 };
 
-#define CHECKPOINT_SIZE_PKTS 4 // checkpoints every 4 packets (32B)
-#define RESPONSE_FIFO_BUF_N_BITS 6
-#define RESPONSE_FIFO_BUF_SIZE (1 << RESPONSE_FIFO_BUF_N_BITS)
-#define RESPONSE_FIFO_PTR_MASK (RESPONSE_FIFO_BUF_SIZE - 1)
-
 /** Command issuer. */
 class noc_commander : public noc_tile {
 

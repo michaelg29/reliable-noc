@@ -32,7 +32,7 @@ void noc_top::generate_network() {
     // create responder2 tile
     _tiles[NOC_Y_RESPONDER2][NOC_X_RESPONDER2] = new noc_responder("responder2", NOC_BASE_ADDR_RESPONDER2);
     _apps[2] = new application("main_application2");
-    ((noc_responder*)_tiles[NOC_Y_RESPONDER2][NOC_X_RESPONDER2])->proc_if(*_apps[2]);
+    ((noc_responder*)_tiles[NOC_Y_RESPONDER2][NOC_X_RESPONDER2])->proc_if(*_apps[2]);    
 
     // create _routers and _adapters
     for (int y = 0; y < NOC_Y_SIZE; ++y) {
@@ -44,10 +44,19 @@ void noc_top::generate_network() {
             _routers[y][x] = new noc_router(("router_" + std::to_string(x) + std::to_string(y)).c_str(), x, y);
         }
     }
+    
+    // configure redundancy
+    uint32_t redundant_base_addrs[3] = {NOC_BASE_ADDR_RESPONDER0, NOC_BASE_ADDR_RESPONDER1, NOC_BASE_ADDR_RESPONDER2};
+    noc_routing_alg_e routing_algs[3] = {NOC_ROUTE_Y_X, NOC_ROUTE_Y_X, NOC_ROUTE_X_Y};
+    _adapters[NOC_Y_COMMANDER][NOC_X_COMMANDER]->configure_redundancy(redundant_base_addrs, routing_algs);
 
     // ===========================
     // ===== CONNECT MODULES =====
     // ===========================
+    
+    int j = NOC_MODE;
+    int k = NOC_MODE_BASE;
+    int l = NOC_MODE_REDUNDANT;
 
     for (int y = 0; y < NOC_Y_SIZE; ++y) {
         for (int x = 0; x < NOC_X_SIZE; ++x) {
@@ -57,22 +66,14 @@ void noc_top::generate_network() {
 
                 // connect adapter and router
                 _adapters[y][x]->router_if(*_routers[y][x]);
-#if NOC_MODE == NOC_MODE_BASE
-                _routers[y][x]->rports[NOC_DIR_TILE](*_adapters[y][x]);
-#elif NOC_MODE == NOC_MODE_REDUNDANT
                 _routers[y][x]->rports[NOC_DIR_TILE0](*_adapters[y][x]);
                 _routers[y][x]->rports[NOC_DIR_TILE1](*_adapters[y][x]);
                 _routers[y][x]->rports[NOC_DIR_TILE2](*_adapters[y][x]);
-#endif
             }
             else {
-#if NOC_MODE == NOC_MODE_BASE
-                _routers[y][x]->rports[NOC_DIR_TILE](dummy_if);
-#elif NOC_MODE == NOC_MODE_REDUNDANT
-                _routers[y][x]->rports[NOC_DIR_TILE0](dummy_if);]);
-                _routers[y][x]->rports[NOC_DIR_TILE1](dummy_if);]);
-                _routers[y][x]->rports[NOC_DIR_TILE2](dummy_if);]);
-#endif
+                _routers[y][x]->rports[NOC_DIR_TILE0](dummy_if);
+                _routers[y][x]->rports[NOC_DIR_TILE1](dummy_if);
+                _routers[y][x]->rports[NOC_DIR_TILE2](dummy_if);
             }
 
             // connect router to neighbors

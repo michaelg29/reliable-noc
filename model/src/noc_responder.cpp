@@ -14,6 +14,10 @@ noc_responder::noc_responder(sc_module_name name, uint32_t base_addr) : noc_tile
     _last_packet_loaded = false;
 }
 
+void noc_responder::signal(uint32_t signal) {
+    LOGF("[%s]: Received interrupt with signal %d", this->name(), signal);
+}
+
 void noc_responder::main() {
     uint32_t out_addr;
     noc_data_t out_buf;

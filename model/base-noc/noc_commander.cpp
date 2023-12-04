@@ -43,6 +43,10 @@ noc_commander::noc_commander(sc_module_name name) : noc_tile(name) {
     _in_fifo_tail = 0;
 }
 
+void noc_commander::signal(uint32_t signal) {
+    LOGF("[%s]: Received interrupt with signal %d", this->name(), signal);
+}
+
 void noc_commander::transmit_to_responders(noc_data_t *packets, uint32_t n) {
     // determine number of packets
     n = (n / NOC_DSIZE) + ((n % NOC_DSIZE) ? 1 : 0);

@@ -3,6 +3,7 @@
 
 #include "sc_trace.hpp"
 #include "noc_if.h"
+#include "noc_tile.h"
 #include "noc_adapter_if.h"
 
 #ifndef NOC_ADAPTER_H
@@ -15,6 +16,9 @@ class noc_adapter : public sc_module, public noc_if, public noc_adapter_if {
 
         /** Corresponding router. */
         sc_port<noc_if> router_if;
+        
+        /** Corresponding tile. */
+        sc_port<noc_tile_if> tile_if;
 
         /** Constructor. */
         SC_HAS_PROCESS(noc_adapter);

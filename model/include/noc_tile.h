@@ -59,8 +59,16 @@ enum noc_responder_state_e {
 // ===== TILE MODULES =====
 // ========================
 
+class noc_tile_if : virtual public sc_interface {
+
+    public:
+
+        virtual void signal(uint32_t signal) = 0;
+
+};
+
 /** NoC tile module. */
-class noc_tile : public sc_module {
+class noc_tile : public sc_module, public noc_tile_if {
 
     public:
 
@@ -69,6 +77,9 @@ class noc_tile : public sc_module {
 
         /** Constructor. */
         noc_tile(sc_module_name name);
+
+        /** noc_tile_if functions. */
+        virtual void signal(uint32_t signal) = 0;
 
 };
 
@@ -80,6 +91,9 @@ class noc_commander : public noc_tile {
         /** Constructor. */
         SC_HAS_PROCESS(noc_commander);
         noc_commander(sc_module_name name);
+
+        /** noc_tile functions. */
+        void signal(uint32_t signal);
 
     private:
 
@@ -122,6 +136,9 @@ class noc_responder : public noc_tile {
         /** Constructor. */
         SC_HAS_PROCESS(noc_responder);
         noc_responder(sc_module_name name, uint32_t base_addr);
+
+        /** noc_tile functions. */
+        void signal(uint32_t signal);
 
     private:
 

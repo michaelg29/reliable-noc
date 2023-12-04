@@ -53,16 +53,13 @@ void noc_top::generate_network() {
     // ===========================
     // ===== CONNECT MODULES =====
     // ===========================
-    
-    int j = NOC_MODE;
-    int k = NOC_MODE_BASE;
-    int l = NOC_MODE_REDUNDANT;
 
     for (int y = 0; y < NOC_Y_SIZE; ++y) {
         for (int x = 0; x < NOC_X_SIZE; ++x) {
             if (_tiles[y][x]) {
                 // connect tile and adapter
                 _tiles[y][x]->adapter_if(*_adapters[y][x]);
+                _adapters[y][x]->tile_if(*_tiles[y][x]);
 
                 // connect adapter and router
                 _adapters[y][x]->router_if(*_routers[y][x]);

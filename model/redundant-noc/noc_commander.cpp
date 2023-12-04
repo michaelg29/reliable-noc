@@ -7,6 +7,10 @@
 #include "sc_trace.hpp"
 #include "noc_tile.h"
 
+// comparison counters
+uint32_t n_bytes_cmp = 0;
+uint32_t n_err_bytes = 0;
+
 noc_commander::noc_commander(sc_module_name name) : noc_tile(name) {
     SC_THREAD(main);
     SC_THREAD(recv_listener);
@@ -41,6 +45,15 @@ noc_commander::noc_commander(sc_module_name name) : noc_tile(name) {
     _in_fifo_tail = 0;
 }
 
+void noc_commander::signal(uint32_t signal) {
+    LOGF("[%s]: Received interrupt with signal %d", this->name(), signal);
+
+    if (signal == 1) {
+        _state == NOC_COMMANDER_IDLE;
+        recv_processor();
+    }
+}
+
 void noc_commander::transmit_to_responders(noc_data_t *packets, uint32_t n) {
     // determine number of packets
     n = (n / NOC_DSIZE) + ((n % NOC_DSIZE) ? 1 : 0);
@@ -55,7 +68,7 @@ void noc_commander::transmit_to_responders(noc_data_t *packets, uint32_t n) {
         noc_responder0_addr += NOC_DSIZE;
         packets++;
     }
-    
+
     //adapter_if->write_packet(0, NOC_BASE_ADDR_RESPONDER0, packets, n, REDUNDANT_COMMAND);
 }
 
@@ -85,10 +98,6 @@ void noc_commander::recv_listener() {
     uint32_t src_addr;
     uint32_t rel_addr;
     noc_data_t data;
-    
-    // comparison counters
-    uint32_t n_bytes_cmp = 0;
-    uint32_t n_err_bytes = 0;
 
     while (true) {
         // receive packet
@@ -98,7 +107,7 @@ void noc_commander::recv_listener() {
             rel_addr += NOC_BASE_ADDR_COMMANDER;
             latency_tracker::capture(&data, &rel_addr);
             rel_addr -= NOC_BASE_ADDR_COMMANDER;
-            
+
             // compare bytes
             for (int i = 0; i < NOC_DSIZE;
                  ++i, data >>= 8, n_bytes_cmp++) {
@@ -107,7 +116,7 @@ void noc_commander::recv_listener() {
                     n_err_bytes++;
                 }
             }
-            
+
             if (n_bytes_cmp >= _exp_buf_size) {
                 LOG("Setting to IDLE");
                 _state == NOC_COMMANDER_IDLE;
@@ -115,14 +124,14 @@ void noc_commander::recv_listener() {
             }
         }
     }
-    
+
+    recv_processor();
+}
+
+void noc_commander::recv_processor() {
     // compare received and expected buffer
     LOG("Completed simulation, checking output...");
     printf("Final report: %d bytes compared, %d errors\n", n_bytes_cmp, n_err_bytes);
 
     sc_stop();
-}
-
-void noc_commander::recv_processor() {
-    
 }

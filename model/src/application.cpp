@@ -312,7 +312,7 @@ void application::configure(uint32_t command, uint32_t payload_size, uint32_t ou
 
     LOGF("[%s]: Configured to receive payload of size %d and write to %08x", this->name(), payload_size, out_addr);
 
-    sc_fault_injector::set_injectable_ptr(_iv.string, AES_BLOCK_LEN, 0.001f, (char*)this->name());
+    sc_fault_injector::set_injectable_ptr(_iv.string, AES_BLOCK_LEN, 0.05f, (char*)this->name());
 }
 
 void application::write_packet(uint32_t rel_addr, noc_data_t buffer) {

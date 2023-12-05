@@ -108,17 +108,17 @@ class sc_fault_injector {
                             var.pos_fault_count++;
 
                             // determine which bit to upset
-                            fault_bit = (uint32_t)(rand()) & 0x7;
+                            fault_bit = rand_val & 0x7;
                             fault_bit = 0b1 << fault_bit;
 
                             // perform mask
-                            if ((uint32_t)rand() & 0b1) {
-                                // possible 0 --> 1 fault
+                            if ((uint32_t)rand() & 0x8) {
+                                // 50% chance of possible 0 --> 1 fault
                                 if (!(*ptr & fault_bit)) var.fault_count++;
                                 *ptr |= fault_bit;
                             }
                             else {
-                                // possible 1 --> 0 fault
+                                // 50% chance of possible 1 --> 0 fault
                                 if (*ptr & fault_bit) var.fault_count++;
                                 *ptr ^= fault_bit;
                             }

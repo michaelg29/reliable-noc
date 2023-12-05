@@ -42,10 +42,10 @@ class redundancy_state {
             new_crc = _crc[_checkpoint_idx];
 
             if (_count_cur_checkpoint == _checkpoint_size) {
-                // advance checkpoint and copy previous CRC
+                // advance checkpoint and start new CRC
                 _count_cur_checkpoint = 0;
                 _checkpoint_idx++;
-                _crc[_checkpoint_idx] = _crc[_checkpoint_idx-1];
+                _crc[_checkpoint_idx] = CRC_START_32;
 
                 return _checkpoint_idx;
             }

@@ -87,7 +87,9 @@ elif argv[1] == "latency":
     # values to plot
     latency_base = np_array(3583.33, 0.0, 64625.0, 0.0, 180000.0, 0.0) / 1000.0
     latency_redu = np_array(0.0, 3583.33, 0.0, 10000.0, 0.0, 58000.0) / 1000.0
+    factors = latency_base[::2] / latency_redu[1::2]
     stacked_chart(width, xticks, latency_base, latency_redu)
+    print(factors)
 
     # extended x-axis tick values
     xticks = np.arange(3)
@@ -97,7 +99,7 @@ elif argv[1] == "latency":
     plt.xticks(xticks, tick_labels)
     plt.yticks(np.arange(0, 201, 20))
     plt.xlabel("Latency measure by mode")
-    plt.ylabel("Average latency (clock cycles)")
+    plt.ylabel("Latency (clock cycles)")
     plt.title("Latency of each system")
 
     pass

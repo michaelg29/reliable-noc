@@ -16,7 +16,7 @@ class noc_adapter : public sc_module, public noc_if, public noc_adapter_if {
 
         /** Corresponding router. */
         sc_port<noc_if> router_if;
-        
+
         /** Corresponding tile. */
         sc_port<noc_tile_if> tile_if;
 
@@ -51,7 +51,7 @@ class noc_adapter : public sc_module, public noc_if, public noc_adapter_if {
         uint32_t _redundant_dst_x[3];
         uint32_t _redundant_dst_y[3];
         noc_routing_alg_e _redundant_routing_alg[3];
-        
+
         /** Processed packets. */
         uint32_t _out_fifo_src_addr[RESPONSE_FIFO_BUF_SIZE];
         uint32_t _out_fifo_rel_addr[RESPONSE_FIFO_BUF_SIZE];
@@ -62,7 +62,7 @@ class noc_adapter : public sc_module, public noc_if, public noc_adapter_if {
         /** noc_adapter_if functions. */
         bool _read_packet(uint32_t& src_addr, uint32_t& addr, noc_data_t& data);
         bool _write_packet(uint32_t src, uint32_t addr, noc_data_t *data, uint32_t n);
-        
+
         /** Main thread function. */
         void main();
 

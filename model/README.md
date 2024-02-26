@@ -11,9 +11,9 @@ Standard network-on-chip architecture.
 
 Common classes and interfaces.
 
-## redundant-noc
+## reliable-noc
 
-Network-on-chip architecture with integrated redundancy.
+Network-on-chip architecture with integrated reliability measures.
 
 ## src
 

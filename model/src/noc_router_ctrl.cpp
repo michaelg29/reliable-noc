@@ -43,7 +43,7 @@ bool noc_router_rctrl::write_input(noc_data_t data, noc_link_ctrl_t link_ctrl) {
     if (link_ctrl.dst.x == _x && link_ctrl.dst.y == _y) {
 #if NOC_MODE == NOC_MODE_BASE
         target_dir = NOC_DIR_TILE;
-#elif NOC_MODE == NOC_MODE_REDUNDANT
+#elif NOC_MODE == NOC_MODE_RELIABLE
         target_dir = NOC_DIR_TILE0; // always write to initial tile port
 #endif
     }

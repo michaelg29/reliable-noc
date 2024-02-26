@@ -359,7 +359,7 @@ bool application::read_packet(uint32_t& out_addr, noc_data_t& out_buffer) {
         out_addr = _out_addr;
         out_buffer = _out_fifo[_out_fifo_head & APPL_FIFO_PTR_MASK];
         _out_fifo_head++;
-        
+
         LOGF("[%s]: Writing %016lx to %08x", this->name(), out_buffer, out_addr);
 
         _out_addr += sizeof(noc_data_t);

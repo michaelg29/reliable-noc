@@ -115,7 +115,7 @@ class noc_router : public sc_module, public noc_if {
         void read_port(noc_dir_e dir, noc_data_t& data, noc_link_ctrl_t& link_ctrl);
 
     private:
-    
+
         /** Directional controllers. */
         noc_router_rctrl _rdir_ctrls[NOC_N_RDIR];
         noc_router_wctrl _wdir_ctrls[NOC_N_WDIR];

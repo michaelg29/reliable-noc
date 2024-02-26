@@ -14,7 +14,7 @@ enum noc_dir_e {
     NOC_DIR_Y_MINUS,
 #if NOC_MODE == NOC_MODE_BASE
     NOC_DIR_TILE,
-#elif NOC_MODE == NOC_MODE_REDUNDANT
+#elif NOC_MODE == NOC_MODE_RELIABLE
     NOC_DIR_TILE0,
     NOC_DIR_TILE1,
     NOC_DIR_TILE2,
@@ -34,7 +34,7 @@ enum noc_port_mode_e {
 
 #if NOC_MODE == NOC_MODE_BASE
     #define NOC_N_WDIR (uint32_t)(NOC_DIR_NULL)
-#elif NOC_MODE == NOC_MODE_REDUNDANT
+#elif NOC_MODE == NOC_MODE_RELIABLE
     #define NOC_N_WDIR (uint32_t)(NOC_DIR_TILE1)
 #endif
 #define NOC_N_RDIR (uint32_t)(NOC_DIR_NULL)

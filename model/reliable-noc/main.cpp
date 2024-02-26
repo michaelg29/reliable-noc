@@ -1,5 +1,5 @@
 
-#define NOC_MODE NOC_MODE_REDUNDANT
+#define NOC_MODE NOC_MODE_RELIABLE
 
 #include "system.h"
 #include "sc_fault_inject.hpp"

@@ -35,7 +35,7 @@ void noc_router::main() {
     if_port_dirs[NOC_DIR_Y_MINUS] = NOC_DIR_Y_PLUS; // read y+ port from y- router
 #if NOC_MODE == NOC_MODE_BASE
     if_port_dirs[NOC_DIR_TILE] = NOC_DIR_TILE;      // read tile port
-#elif NOC_MODE == NOC_MODE_REDUNDANT
+#elif NOC_MODE == NOC_MODE_RELIABLE
     if_port_dirs[NOC_DIR_TILE0] = NOC_DIR_TILE0;    // read tile port
     if_port_dirs[NOC_DIR_TILE1] = NOC_DIR_TILE1;    // read tile port
     if_port_dirs[NOC_DIR_TILE2] = NOC_DIR_TILE2;    // read tile port

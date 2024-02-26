@@ -81,7 +81,7 @@ class application : virtual public sc_interface, public sc_module {
 
         /** Receive packet. */
         void write_packet(uint32_t rel_addr, noc_data_t buffer);
-        
+
         /** Read output packet. */
         bool read_packet(uint32_t& out_addr, noc_data_t& out_buffer);
 
@@ -115,7 +115,7 @@ class application : virtual public sc_interface, public sc_module {
 
         /** Main thread functions. */
         void main();
-        
+
         /** AES functions and buffers. */
         aes_block_t _state;
         aes_block_t _tmp;

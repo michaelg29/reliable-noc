@@ -68,7 +68,7 @@ class noc_vc {
         int32_t _head;
         int32_t _tail;
         std::string _name;
-        
+
         /** Statistics. */
         uint32_t _enqueues;
         uint32_t _dequeues;
